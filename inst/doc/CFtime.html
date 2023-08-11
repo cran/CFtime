@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>CFtime</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">CFtime</h1>
+
+
+
+<div id="climate-change-models-and-calendars" class="section level2">
+<h2>Climate change models and calendars</h2>
+<p>Around the world, many climate change models are being developed
+(100+) under the umbrella of the <a href="https://www.wcrp-climate.org">World Climate Research Programme</a>
+to assess the rate of climate change. Published data is generally
+publicly available to download for research and other (non-commercial)
+purposes through partner organizations in the Earth Systems Grid
+Federation.</p>
+<p>The data are all formatted to comply with the <a href="http://cfconventions.org">CF Metadata Conventions</a>, a set of
+standards to support standardization among research groups and published
+data sets. These conventions greatly facilitate use and analysis of the
+climate projections because standard processing work flows (should) work
+across the various data sets.</p>
+<p>On the flip side, the CF Metadata Conventions needs to cater to a
+wide range of modeling requirements and that means that some of the
+areas covered by the standards are more complex than might be assumed.
+One of those areas is the temporal dimension of the data sets. The CF
+Metadata Conventions supports no less than nine different calendar
+definitions, that, upon analysis, fall into five distinct calendars
+(from the perspective of computation of climate projections):</p>
+<ul>
+<li><code>standard</code> or <code>gregorian</code>: The international
+civil calendar that is in common use in many countries around the world,
+adopted by edict of Pope Gregory XIII in 1582 and in effect from 15
+October of that year. The <code>proleptic_gregorian</code> calendar is
+the same as the <code>gregorian</code> calendar, but with validity
+extended to periods prior to <code>1582-10-15</code>.</li>
+<li><code>julian</code>: Adopted in the year 45 BCE, every fourth year
+is a leap year. Originally, the julian calendar did not have a
+monotonically increasing year assigned to it and there are indeed
+several julian calendars in use around the world today with different
+years assigned to them. Common interpretation is currently that the year
+is the same as that of the standard calendar. The julian calendar is
+currently 13 days behind the gregorian calendar.</li>
+<li><code>365_day</code> or <code>noleap</code>: No years have a leap
+day.</li>
+<li><code>366_day</code> or <code>all_leap</code>: All years have a leap
+day.</li>
+<li><code>360_day</code>: Every year has 12 months of 30 days each.</li>
+</ul>
+<p>The three latter calendars are specific to the CF Metadata
+Conventions to reduce computational complexities of working with dates.
+These three, and the julian calendar, are not compliant with the
+standard <code>POSIXt</code> date/time facilities in <code>R</code> and
+using standard date/time procedures would quickly lead to problems. In
+the below code snippet, the date of <code>1949-12-01</code> is the
+<em>datum</em> from which other dates are calculated. When adding 43,289
+days to this <em>datum</em> for a data set that uses the
+<code>360_day</code> calendar, that should yield a date some 120 years
+after the <em>datum</em>:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># POSIXt calculations on a standard calendar - INCORRECT</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">as.Date</span>(<span class="st">&quot;1949-12-01&quot;</span>) <span class="sc">+</span> <span class="dv">43289</span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;2068-06-08&quot;</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co"># CFtime calculation on a &quot;360_day&quot; calendar - CORRECT</span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co"># See below examples for details on the two functions</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="fu">CFtimestamp</span>(<span class="fu">CFtime</span>(<span class="st">&quot;days since 1949-12-01&quot;</span>, <span class="st">&quot;360_day&quot;</span>, <span class="dv">43289</span>))</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co">#&gt; [1] &quot;2070-02-30&quot;</span></span></code></pre></div>
+<p>Using standard <code>POSIXt</code> calculations gives a result that
+is about 21 months off from the correct date - obviously an undesirable
+situation. This example is far from artificial: <code>1949-12-01</code>
+is the datum for all CORDEX data, covering the period 1951 - 2005 for
+historical experiments and the period 2006 - 2100 for RCP experiments
+(with some deviation between data sets), and several models used in the
+CORDEX set use the <code>360_day</code> calendar. The
+<code>365_day</code> or <code>noleap</code> calendar deviates by about 1
+day every 4 years (disregarding centurial years), or about 24 days in a
+century. The <code>366_day</code> or <code>all_leap</code> calendar
+deviates by about 3 days every 4 years, or about 76 days in a
+century.</p>
+<p>The <code>CFtime</code> package deals with the complexity of the
+different calendars allowed by the CF Metadata Conventions. It properly
+formats dates and times (even oddball dates like
+<code>2070-02-30</code>) and it can generate calendar-aware factors for
+further processing of the data.</p>
+</div>
+<div id="using-cftime-to-deal-with-calendars" class="section level2">
+<h2>Using CFtime to deal with calendars</h2>
+<p>Data sets that are compliant with the CF Metadata Conventions always
+include a <em>datum</em>, a specific point in time in reference to a
+specified <em>calendar</em>, from which other points in time are
+calculated by adding a specified <em>offset</em> of a certain
+<em>unit</em>. This approach is encapsulated in the <code>CFtime</code>
+package by the S4 class <code>CFtime</code>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Create a CF time object from a definition strinmg, a calendar and some offsets</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(<span class="st">&quot;days since 1949-12-01&quot;</span>, <span class="st">&quot;360_day&quot;</span>, <span class="dv">19830</span><span class="sc">:</span><span class="dv">90029</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>cf</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; CF datum of origin:</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1949-12-01 00:00:00</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt;   Calendar: 360_day</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; CF time series:</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt;   Elements: [2005-01-01 .. 2199-12-30] (average of 1.000000 days between 70200 elements)</span></span></code></pre></div>
+<p>The <code>CFtime()</code> function takes a <em>datum</em> description
+(which is actually a unit - “days” - in reference to a datum -
+“1949-12-01”), a calendar description, and a vector of <em>offsets</em>
+from that datum. Once a <code>CFtime</code> instance is created its
+datum and calendar cannot be changed anymore. Offsets may be added.</p>
+<p>In practice, these parameters will be taken from the data set of
+interest. CF Metadata Conventions require data sets to be in the netCDF
+format, with all metadata describing the data set included in a single
+file. Not surprisingly, all of the pieces are contained in the mandatory
+<code>time</code> dimension of the file. The process then becomes as
+follows, for a CMIP6 file of daily precipitation:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Opening a data file that is included with the package and showing some attributes.</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co"># Usually you would `list.files()` on a directory of your choice.</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>nc <span class="ot">&lt;-</span> <span class="fu">nc_open</span>(<span class="fu">list.files</span>(<span class="at">path =</span> <span class="fu">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="at">package =</span> <span class="st">&quot;CFtime&quot;</span>), <span class="at">full.names =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span>])</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>attrs <span class="ot">&lt;-</span> <span class="fu">ncatt_get</span>(nc, <span class="st">&quot;&quot;</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>attrs<span class="sc">$</span>title</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; [1] &quot;NOAA GFDL GFDL-ESM4 model output prepared for CMIP6 update of RCP4.5 based on SSP2&quot;</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>experiment <span class="ot">&lt;-</span> attrs<span class="sc">$</span>experiment_id</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>experiment</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;ssp245&quot;</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co"># Create the CFtime instance from the metadata in the file.</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>units, nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>calendar, nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>vals)</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>cf</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; CF datum of origin:</span></span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1850-01-01 00:00:00</span></span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt;   Calendar: noleap</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; CF time series:</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt;   Elements: [2015-01-01T12:00:00 .. 2099-12-31T12:00:00] (average of 1.000000 days between 31025 elements)</span></span></code></pre></div>
+<p><code>nc$dim$time$units</code> and <code>nc$dim$time$calendar</code>
+are required attributes of the <code>time</code> dimension in the netCDF
+file, and <code>nc$dim$time$vals</code> are the offset values, or
+<code>dimnames()</code> in <code>R</code> terms, for the
+<code>time</code> dimension of the data. The corresponding character
+representations of the time series can be easily generated:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>dates <span class="ot">&lt;-</span> <span class="fu">CFtimestamp</span>(cf, <span class="at">format =</span> <span class="st">&quot;date&quot;</span>)</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>dates[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;2015-01-01&quot; &quot;2015-01-02&quot; &quot;2015-01-03&quot; &quot;2015-01-04&quot; &quot;2015-01-05&quot;</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt;  [6] &quot;2015-01-06&quot; &quot;2015-01-07&quot; &quot;2015-01-08&quot; &quot;2015-01-09&quot; &quot;2015-01-10&quot;</span></span></code></pre></div>
+<p>…as well as the full range of the time series:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">CFrange</span>(cf)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;2015-01-01T12:00:00&quot; &quot;2099-12-31T12:00:00&quot;</span></span></code></pre></div>
+<p>Note that in this latter case, if any of the timestamps in the time
+series have a time that is other than <code>00:00:00</code> then the
+time of the extremes of the time series is also displayed. This is a
+common occurrence for data sets at a monthly resolution with offsets
+calculated in days (the largest time unit that the CF Metadata
+Conventions allows). Typically the middle of the month is then recorded,
+which for months with 31 days would be something like
+<code>2005-01-15T12:00:00</code>.</p>
+</div>
+<div id="processing-climate-projections" class="section level2">
+<h2>Processing climate projections</h2>
+<p>Individual files containing climate projections contain global,
+regional or local data, typically on a rectangular latitude-longitude
+grid, for a single parameter such as “near-surface temperature”, and for
+a number of time steps. An analysis workflow then consists of a number
+of steps:</p>
+<ul>
+<li>Download the appropriate data files for your desired combination of
+model, experiment, realization, geography, time range, parameter, …
+(called a “data suite” henceforth). If your analysis involves multiple
+parameters (such as temperature and precipitation to estimate crop
+productivity), repeat the process for all parameters. If you want to
+make an ensemble to reduce model bias, repeat again for all desired
+model, experiment and realization combinations (“ensemble member”). You
+end up having one or more data suites to work with.</li>
+<li>Take all files in a data suite and extract the data. Process the
+data in the data suite. Since the data are (mostly) 3-dimensional
+arrays, this will involve binding the arrays on the right dimension and
+then do something like <code>apply(data, 1:2, tapply, f, fun)</code>
+(following the CF Metadata Conventions, dimensions 1 and 2 are
+“longitude” and “latitude”, respectively; the third dimension is
+“time”). Repeat for the data suite for each ensemble member.</li>
+<li>Combine the above results as your workflow requires. Frequently this
+involves computing “anomalies”: ratio the data for one or more future
+periods to a baseline period. Repeat for each ensemble member.</li>
+<li>Construct the ensemble from the individual ensemble members.</li>
+</ul>
+<p>Apart from the first step of obtaining the data, the steps lend
+themselves well to automation. The catch, however, is in the factor
+<code>f</code> to use with <code>tapply()</code>. The different models
+(in your ensemble) use different calendars, meaning that different
+factors are required. The CFtime package can help out.</p>
+<p>The <code>CFfactor()</code> function produces a factor that respects
+the calendar of the data files. The function comes in two operating
+modes:</p>
+<ul>
+<li>Plain vanilla mode produces a factor for a time period across the
+entire time series. The factor level includes the year. This would be
+useful to calculate mean temperature for every month in every year, for
+instance.</li>
+<li>When one or more “epochs” (periods of interest) are provided, the
+factor level no longer includes the year and can be used to calculate,
+for instance, the mean temperature per period of interest in the epoch
+(e.g. average March temperature in the epoch 2041-2060).</li>
+</ul>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co"># Create a dekad factor for the whole `cf` time series that was created above</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>f_k <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(cf, <span class="st">&quot;dekad&quot;</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">str</span>(f_k)</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#&gt;  Factor w/ 3060 levels &quot;2015D01&quot;,&quot;2015D02&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co"># Create four monthly factors for a baseline epoch and early, mid and late 21st century epochs</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>f_ep <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(cf, <span class="at">epoch =</span> <span class="fu">list</span>(<span class="at">baseline =</span> <span class="dv">1991</span><span class="sc">:</span><span class="dv">2020</span>, <span class="at">early =</span> <span class="dv">2021</span><span class="sc">:</span><span class="dv">2040</span>,</span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>                                  <span class="at">mid =</span> <span class="dv">2041</span><span class="sc">:</span><span class="dv">2060</span>, <span class="at">late =</span> <span class="dv">2061</span><span class="sc">:</span><span class="dv">2080</span>))</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="fu">str</span>(f_ep)</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; List of 4</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt;  $ baseline: Factor w/ 12 levels &quot;01&quot;,&quot;02&quot;,&quot;03&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt;  $ early   : Factor w/ 12 levels &quot;01&quot;,&quot;02&quot;,&quot;03&quot;,..: NA NA NA NA NA NA NA NA NA NA ...</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt;  $ mid     : Factor w/ 12 levels &quot;01&quot;,&quot;02&quot;,&quot;03&quot;,..: NA NA NA NA NA NA NA NA NA NA ...</span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt;  $ late    : Factor w/ 12 levels &quot;01&quot;,&quot;02&quot;,&quot;03&quot;,..: NA NA NA NA NA NA NA NA NA NA ...</span></span></code></pre></div>
+<p>For the “epoch” version, there are two interesting things to note
+here:</p>
+<ul>
+<li>The epochs do not have to coincide with the boundaries of the time
+series. In the example above, the time series starts in 2015, while the
+baseline epoch is from 1991. Obviously, the number of time steps from
+the time series that then fall within this epoch will then be
+reduced.</li>
+<li>The factor is always of the same length as the time series, with
+<code>NA</code> values where the time series values are not falling in
+the epoch. This ensures that the factor is compatible with the data set
+which the time series describes, such that functions like
+<code>tapply()</code> will not throw an error.</li>
+</ul>
+<p>There are five periods defined for <code>CFfactor()</code>:</p>
+<ul>
+<li><code>year</code>, to summarize data to yearly timescales</li>
+<li><code>season</code>, the meteorological seasons. Note that the month
+of December will be added to the months of January and February of the
+following year, so the date “2020-12-01” yields the factor value
+“2021-DJF”.</li>
+<li><code>month</code>, monthly summeries, the default period.</li>
+<li><code>dekad</code>, 10-day period. Each month is subdivided in
+dekads as follows: (1) days 01 - 10; (2) days 11 - 20; (3) remainder of
+the month.</li>
+<li>’day`, to summarize sub-daily data.</li>
+</ul>
+<p>Building on the examples above of opening a file, creating a
+<code>CFtime</code> instance and a suitable factor for one data suite,
+here daily rainfall, the actual processing of the data into
+precipitation anomalies for 3 periods relative to a baseline period
+could look like this:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># Read the data from the netCDF file.</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co"># Keep degenerate dimensions so that we have a predictable data structure: 3-dimensional array.</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co"># Converts units of kg m-2 s-2 to mm/day.</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>pr_d <span class="ot">&lt;-</span> <span class="fu">ncvar_get</span>(nc, <span class="st">&quot;pr&quot;</span>, <span class="at">collapse_degen =</span> <span class="cn">FALSE</span>) <span class="sc">*</span> <span class="dv">86400</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="fu">str</span>(pr_d)</span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt;  num [1, 1, 1:31025] 11.699 7.146 2.25 0.418 0.442 ...</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co"># Note that the data file has two degenerate dimensions for longitude and latitude, to keep</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co"># the example data shipped with this package small.</span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co"># Assign dimnames(), optional.</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="fu">dimnames</span>(pr_d) <span class="ot">&lt;-</span> <span class="fu">list</span>(nc<span class="sc">$</span>dim<span class="sc">$</span>lon<span class="sc">$</span>vals, nc<span class="sc">$</span>dim<span class="sc">$</span>lat<span class="sc">$</span>vals, <span class="fu">CFtimestamp</span>(cf))</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="fu">nc_close</span>(nc)</span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co"># Calculate the daily average precipitation per month for the baseline period</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co"># and the three future epochs.</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co"># `aperm()` rearranges dimensions after `tapply()` mixed them up.</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a>pr_d_ave <span class="ot">&lt;-</span> <span class="fu">lapply</span>(f_ep, <span class="cf">function</span>(f) <span class="fu">aperm</span>(<span class="fu">apply</span>(pr_d, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, tapply, f, mean), <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">1</span>)))</span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co"># Calculate the precipitation anomalies for the future epochs against the baseline.</span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co"># Working with daily averages per month so we can simply subtract and then multiply by days </span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co"># per month for the CF calendar.</span></span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a>baseline <span class="ot">&lt;-</span> pr_d_ave<span class="sc">$</span>baseline</span>
+<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a>pr_d_ave<span class="sc">$</span>baseline <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a>ano <span class="ot">&lt;-</span> <span class="fu">lapply</span>(pr_d_ave, <span class="cf">function</span>(x) (x <span class="sc">-</span> baseline) <span class="sc">*</span> <span class="fu">CFmonth_days</span>(cf))</span>
+<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a></span>
+<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a><span class="co"># Plot the results</span></span>
+<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a><span class="fu">plot</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">12</span>, ano<span class="sc">$</span>early[<span class="dv">1</span>,<span class="dv">1</span>,], <span class="at">type =</span> <span class="st">&quot;o&quot;</span>, <span class="at">col =</span> <span class="st">&quot;blue&quot;</span>, <span class="at">ylim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="dv">50</span>, <span class="dv">40</span>), <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">12</span>), </span>
+<span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a>     <span class="at">main =</span> <span class="fu">paste0</span>(<span class="st">&quot;Hamilton, New Zealand</span><span class="sc">\n</span><span class="st">&quot;</span>, experiment), </span>
+<span id="cb7-30"><a href="#cb7-30" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">&quot;month&quot;</span>, <span class="at">ylab =</span> <span class="st">&quot;Precipitation anomaly (mm)&quot;</span>)</span>
+<span id="cb7-31"><a href="#cb7-31" tabindex="-1"></a><span class="fu">lines</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">12</span>, ano<span class="sc">$</span>mid[<span class="dv">1</span>,<span class="dv">1</span>,], <span class="at">type =</span> <span class="st">&quot;o&quot;</span>, <span class="at">col =</span> <span class="st">&quot;green&quot;</span>)</span>
+<span id="cb7-32"><a href="#cb7-32" tabindex="-1"></a><span class="fu">lines</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">12</span>, ano<span class="sc">$</span>late[<span class="dv">1</span>,<span class="dv">1</span>,], <span class="at">type =</span> <span class="st">&quot;o&quot;</span>, <span class="at">col =</span> <span class="st">&quot;red&quot;</span>)</span></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p>Looks like Hadley will be needing rubber boots in spring and autumn
+back home!</p>
+<p>The interesting feature, working from opening the netCDF file down to
+plotting, is that the specifics of the CF calendar that the data suite
+uses do not have to be considered anywhere in the processing workflow:
+the <code>CFtime</code> package provides the functionality. Data suites
+using another CF calendar are processed exactly the same:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>nc <span class="ot">&lt;-</span> <span class="fu">nc_open</span>(<span class="fu">list.files</span>(<span class="at">path =</span> <span class="fu">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="at">package =</span> <span class="st">&quot;CFtime&quot;</span>), <span class="at">full.names =</span> <span class="cn">TRUE</span>)[<span class="dv">2</span>])</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>units, nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>calendar, nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>vals)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co"># Note that `cf` has a different CF calendar</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>f_ep <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(cf, <span class="at">epoch =</span> <span class="fu">list</span>(<span class="at">baseline =</span> <span class="dv">1991</span><span class="sc">:</span><span class="dv">2020</span>, <span class="at">early =</span> <span class="dv">2021</span><span class="sc">:</span><span class="dv">2040</span>,</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>                                  <span class="at">mid =</span> <span class="dv">2041</span><span class="sc">:</span><span class="dv">2060</span>, <span class="at">late =</span> <span class="dv">2061</span><span class="sc">:</span><span class="dv">2080</span>))</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>pr_d <span class="ot">&lt;-</span> <span class="fu">ncvar_get</span>(nc, <span class="st">&quot;pr&quot;</span>, <span class="at">collapse_degen =</span> <span class="cn">FALSE</span>) <span class="sc">*</span> <span class="dv">86400</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="fu">nc_close</span>(nc)</span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>pr_d_ave <span class="ot">&lt;-</span> <span class="fu">lapply</span>(f_ep, <span class="cf">function</span>(f) <span class="fu">aperm</span>(<span class="fu">apply</span>(pr_d, <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, tapply, f, mean), <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">1</span>)))</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a>baseline <span class="ot">&lt;-</span> pr_d_ave<span class="sc">$</span>baseline</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>pr_d_ave<span class="sc">$</span>baseline <span class="ot">&lt;-</span> <span class="cn">NULL</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>ano <span class="ot">&lt;-</span> <span class="fu">lapply</span>(pr_d_ave, <span class="cf">function</span>(x) (x <span class="sc">-</span> baseline) <span class="sc">*</span> <span class="fu">CFmonth_days</span>(cf))</span></code></pre></div>
+</div>
+<div id="working-with-multiple-files-in-a-single-data-suite" class="section level2">
+<h2>Working with multiple files in a single data suite</h2>
+<p>Due to the large size of typical climate projection data files, it is
+common to have a data suite that is contained in multiple files. A case
+in point is the CORDEX data set which breaks up the experiment period of
+2006 - 2100 into 19 files of 5 years each, with each file covering a
+single parameter (temperature, precipitation, etc) over an entire domain
+(such as Europe, South Asia, Central America and the Caribbean, etc).
+The CFtime package can streamline processing of such multi-file data
+suites as well.</p>
+<p>Assuming that you have your CORDEX files in a directory on disk,
+organized by domain and other properties such as the variable, GCM/RCM
+combination, experiment, etc, the process of preparing the files for
+processing could be encoded in a function as below. The argument
+<code>fn</code> is a list of file names to process, and <code>var</code>
+is the variable contained in the files. (There are no checks on argument
+sanity here, which should really be included. This function only makes
+sense for a single [domain, GCM/RCM, experiment, variable] combination.
+Also be aware of data size, CORDEX files are huge and stitching all
+domain data together will easily exhaust available memory and it may
+thus lead to very large swap files and very poor performance.)</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">library</span>(ncdf4)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">library</span>(abind)</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>prepare_CORDEX <span class="ot">&lt;-</span> <span class="cf">function</span>(fn, var) {</span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>  cf <span class="ot">&lt;-</span> <span class="cn">NA</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>  offsets <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">&quot;list&quot;</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>  data <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">&quot;list&quot;</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>  <span class="fu">lapply</span>(fn, <span class="cf">function</span>(f) {</span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>    nc <span class="ot">&lt;-</span> <span class="fu">nc_open</span>(f)</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">is.na</span>(cf)) </span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>      <span class="co"># Create an &quot;empty&quot; CFtime object, without elements</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>      cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>units, nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>calendar)</span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>    </span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>    <span class="co"># Make a list of all datum offsets and data arrays</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a>    offsets <span class="ot">&lt;-</span> <span class="fu">append</span>(offsets, <span class="fu">as.vector</span>(nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>vals))</span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>    data <span class="ot">&lt;-</span> <span class="fu">append</span>(data, <span class="fu">ncvar_get</span>(nc, var, <span class="at">collapse_degen =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>                   </span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a>    <span class="fu">nc_close</span>(nc)</span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a>  <span class="er">}</span>)</span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a>    </span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a>  <span class="co"># Create a list for output with the CFtime instance assigned the offsets and</span></span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a>  <span class="co"># the data bound in a single 3-dimensional array</span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a>  <span class="fu">list</span>(<span class="at">CFtime =</span> cf <span class="sc">+</span> <span class="fu">unlist</span>(offsets), <span class="at">data =</span> <span class="fu">abind</span>(data, <span class="at">along =</span> <span class="dv">3</span>))</span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a>}</span></code></pre></div>
+<p>Calling this function like
+<code>prepare_CORDEX(list.files(path = &quot;~/CC/CORDEX/CAM&quot;,  pattern = &quot;*.nc&quot;, full.names = TRUE))</code>
+will yield a list with the <code>CFtime</code> instance describing the
+full temporal extent covered by the data files, as well as the data
+bound on the temporal dimension, ready for further processing.</p>
+<p>When working like this it is imperative that the offsets and the data
+arrays are added to their final structures <em>in exactly the same
+order</em>. It is not necessary that the offsets (and the data)
+themselves are in order, but the correspondence between offsets and data
+needs to be maintained. (<code>list.files()</code> produces a list in
+alphabetical order by default, which for most climate projection files
+produces offsets in chronological order.)</p>
+</div>
+<div id="final-observations" class="section level2">
+<h2>Final observations</h2>
+<ul>
+<li>This package is intended to facilitate processing of climate
+projection data. It is not a full implementation of the CF Metadata
+Conventions “time” component.</li>
+<li>In parsing and deparsing of offsets and timestamps, data is rounded
+to milli-second precision. When using units of “days” or “hours”, this
+may lead to some loss of precision due to rounding errors. If
+milli-second precision is required, use a unit of “seconds”. The authors
+have no knowledge of published climate projection data that requires
+milli-second precision so for the intended use of the package this issue
+is marginal.</li>
+</ul>
+</div>
+<div id="acknowledgements" class="section level2">
+<h2>Acknowledgements</h2>
+<p>The results presented contain modified data from Copernicus Climate
+Change Service information, 2023. Neither the European Commission nor
+ECMWF is responsible for any use that may be made of the Copernicus
+information or data it contains.</p>
+<p>We acknowledge the World Climate Research Programme, which, through
+its Working Group on Coupled Modelling, coordinated and promoted CMIP6.
+We thank the climate modeling groups for producing and making available
+their model output, the Earth System Grid Federation (ESGF) for
+archiving the data and providing access, and the multiple funding
+agencies who support CMIP6 and ESGF.</p>
+<p>The two datasets used as examples in this vignette carry the
+following license statements:</p>
+<ul>
+<li><strong>pr_day_GFDL-ESM4_ssp245_r1i1p1f1_gr1_20150101-20991231_v20180701.nc:</strong>
+CMIP6 model data produced by NOAA-GFDL is licensed under a Creative
+Commons Attribution-ShareAlike 4.0 International License (<a href="https://creativecommons.org/licenses/" class="uri">https://creativecommons.org/licenses/</a>). Consult <a href="https://pcmdi.llnl.gov/CMIP6/TermsOfUse/" class="uri">https://pcmdi.llnl.gov/CMIP6/TermsOfUse/</a> for terms of
+use governing CMIP6 output, including citation requirements and proper
+acknowledgment. Further information about this data, including some
+limitations, can be found via the further_info_url (recorded as a global
+attribute in this file). The data producers and data providers make no
+warranty, either express or implied, including, but not limited to,
+warranties of merchantability and fitness for a particular purpose. All
+liabilities arising from the supply of the information (including any
+liability arising in negligence) are excluded to the fullest extent
+permitted by law.</li>
+<li><strong>pr_day_MRI-ESM2-0_ssp245_r1i1p1f1_gn_20150101-20991231_v20190603.nc:</strong>
+CMIP6 model data produced by MRI is licensed under a Creative Commons
+Attribution-ShareAlike 4.0 International License (<a href="https://creativecommons.org/licenses/" class="uri">https://creativecommons.org/licenses/</a>). Consult <a href="https://pcmdi.llnl.gov/CMIP6/TermsOfUse/" class="uri">https://pcmdi.llnl.gov/CMIP6/TermsOfUse/</a> for terms of
+use governing CMIP6 output, including citation requirements and proper
+acknowledgment. Further information about this data, including some
+limitations, can be found via the further_info_url (recorded as a global
+attribute in this file). The data producers and data providers make no
+warranty, either express or implied, including, but not limited to,
+warranties of merchantability and fitness for a particular purpose. All
+liabilities arising from the supply of the information (including any
+liability arising in negligence) are excluded to the fullest extent
+permitted by law.</li>
+</ul>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
