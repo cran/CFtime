@@ -1,2 +1,4 @@
-# 1.1
- - Climate projecting instead of climate change projection
+Write RNetCDF after 1.1 online
+
+# 1.2
+ - CFfactor() can use epochs with lower resolution such as [year, month] for 3-hr data: e.g. daily avg per month per epoch

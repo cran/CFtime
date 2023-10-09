@@ -2,7 +2,7 @@
 #'
 #' @slot datum CFdatum. The atomic origin upon which the `offsets` are based.
 #' @slot resolution numeric. The average number of time units between offsets.
-#' @slot time data.frame Data frame of numeric date elements year, month, day,
+#' @slot time data.frame. Data frame of numeric date elements year, month, day,
 #' hour, minute, second and time zone from offsets defined by the `datum`, as
 #' well as the offset itself.
 #'
@@ -17,34 +17,42 @@ setClass("CFtime",
 
 #' Create a CFtime object
 #'
-#' This function creates an instance of the `CFtime` class. The parameters to
+#' This function creates an instance of the `CFtime` class. The arguments to
 #' the call are typically read from a CF-compliant data file with climatological
-#' observations or cliate change projections.
+#' observations or climate projections. Specification of arguments can also be
+#' made manually in a variety of combinations.
 #'
 #' @param definition character. An atomic string describing the time coordinate
-#' of a CF-compliant data file.
+#'   of a CF-compliant data file.
 #' @param calendar character. An atomic string describing the calendar to use
-#' with the time dimension definition string. Default value is "standard".
-#' @param offsets numeric. An optional vector of offsets from the origin in the time
-#'   series. The unit of measure of the offsets is defined by the time series
-#'   definition as well.
+#'   with the time dimension definition string. Default value is "standard".
+#' @param offsets numeric or character, optional. When numeric, a vector of
+#'   offsets from the origin in the time series. When a character vector,
+#'   timestamps in ISO8601 or UDUNITS format. When an atomic character string, a
+#'   timestamp in ISO8601 or UDUNITS format and then a time series will be
+#'   generated with a separation between steps equal to the unit of measure in
+#'   the definition, inclusive of the definition timestamp. The unit of measure
+#'   of the offsets is defined by the time series definition.
 #'
-#' @returns An object of the `CFtime` class.
+#' @returns An instance of the `CFtime` class.
 #' @export
 #'
 #' @examples
 #' CFtime("days since 1850-01-01", "julian", 0:364)
+#'
+#' CFtime("hours since 2023-01-01", "360_day", "2023-01-30T23:00")
 CFtime <- function(definition, calendar = "standard", offsets = NULL) {
   datum <- CFdatum(definition, calendar)
+
+  if (is.array(offsets)) dim(offsets) <- NULL
 
   if (is.null(offsets)) {
     methods::new("CFtime", datum = datum, resolution = NA_real_,
                  time = data.frame(c(year = integer(), month = integer(), day = integer(),
                                      hour = integer(), minute = integer(), second = numeric(),
                                      tz = character(), offset = numeric())))
-  } else {
-    if (is.array(offsets)) dim(offsets) <- NULL
-    stopifnot(methods::is(offsets, "numeric"), .validOffsets(offsets))
+  } else if (methods::is(offsets, "numeric")) {
+    stopifnot(.validOffsets(offsets))
 
     if (length(offsets) > 1) {
       resolution <- (max(offsets) - min(offsets)) / (length(offsets) - 1)
@@ -53,7 +61,17 @@ CFtime <- function(definition, calendar = "standard", offsets = NULL) {
     }
     time <- .add_offsets(offsets, datum)
     methods::new("CFtime", datum = datum, resolution = resolution, time = time)
-  }
+  } else if (methods::is(offsets, "character")) {
+    time <- .parse_timestamp(datum, offsets)
+    if (any(is.na(time$year))) stop("Offset argument contains invalid timestamps")
+
+    if (length(offsets) == 1) {
+      ts <- seq(0, time$offset)
+      time <- .add_offsets(ts, datum)
+      resolution <- 1
+    } else resolution <- (max(time$offset) - min(time$offset)) / (length(time$offset) - 1)
+    methods::new("CFtime", datum = datum, resolution = resolution, time = time)
+  } else stop("Invalid offsets for CFtime object")
 }
 
 #' @aliases CFproperties
@@ -72,10 +90,15 @@ CFtime <- function(definition, calendar = "standard", offsets = NULL) {
 #'
 #' @examples
 #' cf <- CFtime("days since 1850-01-01", "julian", 0:364)
+#' CFdefinition(cf)
 #' CFcalendar(cf)
 #' CFunit(cf)
 #' CForigin(cf)
 #' CFoffsets(cf)
+
+#' @describeIn CFproperties The defintion string of the CFtime instance
+#' @export
+CFdefinition <- function(cf) cf@datum@definition
 
 #' @describeIn CFproperties The calendar of the CFtime instance
 #' @export
@@ -83,7 +106,7 @@ CFcalendar <- function(cf) cf@datum@calendar
 
 #' @describeIn CFproperties The unit of the CFtime instance
 #' @export
-CFunit <- function(cf) CFtime_unit_string[cf@datum@unit]
+CFunit <- function(cf) CFt$units$name[cf@datum@unit]
 
 #' @describeIn CFproperties The origin of the CFtime instance in timestamp elements
 #' @export
@@ -100,7 +123,7 @@ setMethod("show", "CFtime", function(object) {
     d <- CFrange(object)
     if (nrow(object@time) > 1) {
       el <- sprintf("  Elements: [%s .. %s] (average of %f %s between %d elements)\n",
-                    d[1], d[2], object@resolution, CFtime_unit_string[object@datum@unit], nrow(object@time))
+                    d[1], d[2], object@resolution, CFt$units$name[object@datum@unit], nrow(object@time))
     } else {
       el <- paste("  Elements:", d[1], "\n")
     }
@@ -123,7 +146,7 @@ setMethod("show", "CFtime", function(object) {
 #' CFrange(cf)
 setGeneric("CFrange", function(x) standardGeneric("CFrange"))
 
-#' @describeIn CFrange User method
+#' @describeIn CFrange Extreme values of the time series
 setMethod("CFrange", "CFtime", function(x) .ts_extremes(x))
 
 #' Equivalence of CFtime objects
@@ -132,7 +155,7 @@ setMethod("CFrange", "CFtime", function(x) .ts_extremes(x))
 #' CF-convention time coordinates. Two `CFtime` objects are considered equivalent
 #' if they have an equivalent datum and the same offsets.
 #'
-#' @param e1,e2 CFts. Instances of the `CFtime` class.
+#' @param e1,e2 CFtime. Instances of the `CFtime` class.
 #'
 #' @returns `TRUE` if the `CFtime` objects are equivalent, `FALSE` otherwise.
 #' @export
@@ -158,7 +181,7 @@ setMethod("==", c("CFtime", "CFtime"), function(e1, e2)
 #' the two is thus preserved. When merging the data sets described by this time
 #' series, the order must be identical to the ordering here.
 #'
-#' @param e1,e2 CFts. Instances of the `CFtime` class.
+#' @param e1,e2 CFtime. Instances of the `CFtime` class.
 #'
 #' @returns A `CFtime` object with a set of offsets equal to the offsets of the
 #' instances of `CFtime` that the operator operates on. If the datums of the `CFtime`
@@ -169,7 +192,10 @@ setMethod("==", c("CFtime", "CFtime"), function(e1, e2)
 #' e1 <- CFtime("days since 1850-01-01", "gregorian", 0:364)
 #' e2 <- CFtime("days since 1850-01-01 00:00:00", "standard", 365:729)
 #' e1 + e2
-setMethod("+", c("CFtime", "CFtime"), function(e1, e2) if (.datum_equivalent(e1@datum, e2@datum)) CFtime(e1@datum@definition, e1@datum@calendar, c(e1@time$offset, e2@time$offset)) else stop('Datums not equivalent'))
+setMethod("+", c("CFtime", "CFtime"), function(e1, e2)
+  if (.datum_equivalent(e1@datum, e2@datum))
+    CFtime(e1@datum@definition, e1@datum@calendar, c(e1@time$offset, e2@time$offset))
+  else stop('Datums not equivalent'))
 
 #' Extend a CFtime object with additional offsets
 #'
@@ -185,15 +211,14 @@ setMethod("+", c("CFtime", "CFtime"), function(e1, e2) if (.datum_equivalent(e1@
 #'
 #' Note that when adding multiple vectors of offsets to a `CFtime` instance, it
 #' is more efficient to first concatenate the vectors and then do a final
-#' addition to the `CFtime` instance. So avoid `CFtime(definition, calendar, e1)
-#' + CFtime(definition, calendar, e2) + CFtime(definition, calendar, e3) + ...`
+#' addition to the `CFtime` instance. So avoid `CFtime(definition, calendar, e1) + CFtime(definition, calendar, e2) + CFtime(definition, calendar, e3) + ...`
 #' but rather do `CFtime(definition, calendar, e1) + c(e2, e3, ...)`. It is the
 #' responsibility of the operator to ensure that the offsets of the different
 #' data sets are in reference to the same datum.
 #'
 #' Negative offsets will generate an error.
 #'
-#' @param e1 CFtime Instance of the `CFtime` class.
+#' @param e1 CFtime. Instance of the `CFtime` class.
 #' @param e2 numeric. Vector of offsets to be added to the `CFtime` instance.
 #'
 #' @returns A `CFtime` object with offsets composed of the `CFtime` instance and
@@ -259,6 +284,9 @@ setMethod("+", c("CFtime", "numeric"), function(e1, e2) {if (.validOffsets(e2)) 
 #'
 #' This is an internal function that should not be used outside of the CFtime package.
 #'
+#' This functions introduces an error where the datum unit is "months" or "years",
+#' due to the ambiguous definition of these units.
+#'
 #' @param offsets numeric. Vector of offsets to add to the datum.
 #' @param datum CFdatum. The datum that defines the unit of the offsets and the
 #' origin to add the offsets to.
@@ -270,7 +298,7 @@ setMethod("+", c("CFtime", "numeric"), function(e1, e2) {if (.validOffsets(e2)) 
   len <- length(offsets)
 
   # First add time: convert to seconds first, then recompute time parts
-  secs <- offsets * CFtime_unit_seconds[datum@unit]
+  secs <- offsets * CFt$units$seconds[datum@unit]
   secs <- secs + datum@origin$hour[1] * 3600 + datum@origin$minute[1] * 60 + datum@origin$second[1]
   days <- secs %/% 86400            # overflow days
   secs <- round(secs %% 86400, 3)   # drop overflow days from time, round down to milli-seconds avoid errors
@@ -303,7 +331,6 @@ setMethod("+", c("CFtime", "numeric"), function(e1, e2) {if (.validOffsets(e2)) 
 }
 
 #' 360_day, use integer arithmetic
-#'
 #' This is an internal function that should not be used outside of the CFtime package.
 #'
 #' @param x integer. Vector of days to add to the origin.

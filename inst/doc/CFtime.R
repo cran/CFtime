@@ -1,4 +1,4 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
@@ -17,7 +17,7 @@ as.Date("1949-12-01") + 43289
 CFtimestamp(CFtime("days since 1949-12-01", "360_day", 43289))
 
 ## -----------------------------------------------------------------------------
-# Create a CF time object from a definition strinmg, a calendar and some offsets
+# Create a CF time object from a definition string, a calendar and some offsets
 cf <- CFtime("days since 1949-12-01", "360_day", 19830:90029)
 cf
 
@@ -27,11 +27,22 @@ cf
 nc <- nc_open(list.files(path = system.file("extdata", package = "CFtime"), full.names = TRUE)[1])
 attrs <- ncatt_get(nc, "")
 attrs$title
+
+# "Conventions" global attribute must have a string like "CF-1.7" for this package to work reliably
+attrs$Conventions
+
 experiment <- attrs$experiment_id
 experiment
 
 # Create the CFtime instance from the metadata in the file.
 cf <- CFtime(nc$dim$time$units, nc$dim$time$calendar, nc$dim$time$vals)
+cf
+
+## -----------------------------------------------------------------------------
+library(RNetCDF)
+nc <- open.nc(list.files(path = system.file("extdata", package = "CFtime"), full.names = TRUE)[1])
+att.get.nc(nc, -1, "Conventions")
+cf <- CFtime(att.get.nc(nc, "time", "units"), att.get.nc(nc, "time", "calendar"), var.get.nc(nc, "time"))
 cf
 
 ## -----------------------------------------------------------------------------
@@ -46,83 +57,36 @@ CFrange(cf)
 f_k <- CFfactor(cf, "dekad")
 str(f_k)
 
-# Create four monthly factors for a baseline epoch and early, mid and late 21st century epochs
-f_ep <- CFfactor(cf, epoch = list(baseline = 1991:2020, early = 2021:2040,
-                                  mid = 2041:2060, late = 2061:2080))
-str(f_ep)
+# Create monthly factors for a baseline epoch and early, mid and late 21st century epochs
+baseline <- CFfactor(cf, epoch = 1991:2020)
+future <- CFfactor(cf, epoch = list(early = 2021:2040, mid = 2041:2060, late = 2061:2080))
+str(future)
 
 ## -----------------------------------------------------------------------------
-# Read the data from the netCDF file.
-# Keep degenerate dimensions so that we have a predictable data structure: 3-dimensional array.
-# Converts units of kg m-2 s-2 to mm/day.
-pr_d <- ncvar_get(nc, "pr", collapse_degen = FALSE) * 86400
-str(pr_d)
-# Note that the data file has two degenerate dimensions for longitude and latitude, to keep
-# the example data shipped with this package small.
+# How many time units fits in a factor level?
+CFfactor_units(cf, baseline)
 
-# Assign dimnames(), optional.
-dimnames(pr_d) <- list(nc$dim$lon$vals, nc$dim$lat$vals, CFtimestamp(cf))
-
-nc_close(nc)
-
-# Calculate the daily average precipitation per month for the baseline period
-# and the three future epochs.
-# `aperm()` rearranges dimensions after `tapply()` mixed them up.
-pr_d_ave <- lapply(f_ep, function(f) aperm(apply(pr_d, 1:2, tapply, f, mean), c(2, 3, 1)))
-
-# Calculate the precipitation anomalies for the future epochs against the baseline.
-# Working with daily averages per month so we can simply subtract and then multiply by days 
-# per month for the CF calendar.
-baseline <- pr_d_ave$baseline
-pr_d_ave$baseline <- NULL
-ano <- lapply(pr_d_ave, function(x) (x - baseline) * CFmonth_days(cf))
-
-# Plot the results
-plot(1:12, ano$early[1,1,], type = "o", col = "blue", ylim = c(-50, 40), xlim = c(1, 12), 
-     main = paste0("Hamilton, New Zealand\n", experiment), 
-     xlab = "month", ylab = "Precipitation anomaly (mm)")
-lines(1:12, ano$mid[1,1,], type = "o", col = "green")
-lines(1:12, ano$late[1,1,], type = "o", col = "red")
+# What's the absolute and relative coverage of our time series
+CFfactor_coverage(cf, baseline, "absolute")
+CFfactor_coverage(cf, baseline, "relative")
 
 ## -----------------------------------------------------------------------------
-nc <- nc_open(list.files(path = system.file("extdata", package = "CFtime"), full.names = TRUE)[2])
-cf <- CFtime(nc$dim$time$units, nc$dim$time$calendar, nc$dim$time$vals)
-# Note that `cf` has a different CF calendar
+# 4 years of data on a `365_day` calendar, keep 80% of values
+n <- 365 * 4
+cov <- 0.8
+offsets <- sample(0:(n-1), n * cov)
 
-f_ep <- CFfactor(cf, epoch = list(baseline = 1991:2020, early = 2021:2040,
-                                  mid = 2041:2060, late = 2061:2080))
+cf <- CFtime("days since 2020-01-01", "365_day", offsets)
+cf
+# Note that there are about 1.25 days between observations
 
-pr_d <- ncvar_get(nc, "pr", collapse_degen = FALSE) * 86400
-nc_close(nc)
+mon <- CFfactor(cf, "month")
+CFfactor_coverage(cf, mon, "absolute")
+CFfactor_coverage(cf, mon, "relative")
 
-pr_d_ave <- lapply(f_ep, function(f) aperm(apply(pr_d, 1:2, tapply, f, mean), c(2, 3, 1)))
-baseline <- pr_d_ave$baseline
-pr_d_ave$baseline <- NULL
-ano <- lapply(pr_d_ave, function(x) (x - baseline) * CFmonth_days(cf))
-
-## ----eval = FALSE-------------------------------------------------------------
-#  library(ncdf4)
-#  library(abind)
-#  
-#  prepare_CORDEX <- function(fn, var) {
-#    cf <- NA
-#    offsets <- vector("list")
-#    data <- vector("list")
-#    lapply(fn, function(f) {
-#      nc <- nc_open(f)
-#      if (is.na(cf))
-#        # Create an "empty" CFtime object, without elements
-#        cf <- CFtime(nc$dim$time$units, nc$dim$time$calendar)
-#  
-#      # Make a list of all datum offsets and data arrays
-#      offsets <- append(offsets, as.vector(nc$dim$time$vals))
-#      data <- append(data, ncvar_get(nc, var, collapse_degen = FALSE)
-#  
-#      nc_close(nc)
-#    })
-#  
-#    # Create a list for output with the CFtime instance assigned the offsets and
-#    # the data bound in a single 3-dimensional array
-#    list(CFtime = cf + unlist(offsets), data = abind(data, along = 3))
-#  }
+## -----------------------------------------------------------------------------
+# Days in January and February
+cf <- CFtime("days since 2023-01-01", "360_day", 0:59)
+cf_days <- CFtimestamp(cf, "date")
+as.Date(cf_days)
 
