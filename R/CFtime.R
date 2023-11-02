@@ -63,7 +63,7 @@ CFtime <- function(definition, calendar = "standard", offsets = NULL) {
     methods::new("CFtime", datum = datum, resolution = resolution, time = time)
   } else if (methods::is(offsets, "character")) {
     time <- .parse_timestamp(datum, offsets)
-    if (any(is.na(time$year))) stop("Offset argument contains invalid timestamps")
+    if (anyNA(time$year)) stop("Offset argument contains invalid timestamps")
 
     if (length(offsets) == 1) {
       ts <- seq(0, time$offset)
@@ -95,6 +95,7 @@ CFtime <- function(definition, calendar = "standard", offsets = NULL) {
 #' CFunit(cf)
 #' CForigin(cf)
 #' CFoffsets(cf)
+#' CFresolution(cf)
 
 #' @describeIn CFproperties The defintion string of the CFtime instance
 #' @export
@@ -115,6 +116,10 @@ CForigin <- function(cf) cf@datum@origin
 #' @describeIn CFproperties The offsets of the CFtime instance as a vector
 #' @export
 CFoffsets <- function(cf) cf@time$offset
+
+#' @describeIn CFproperties The average separation between the offsets in the CFtime instance
+#' @export
+CFresolution <- function(cf) cf@resolution
 
 setMethod("show", "CFtime", function(object) {
   if (nrow(object@time) == 0) {
@@ -149,6 +154,37 @@ setGeneric("CFrange", function(x) standardGeneric("CFrange"))
 #' @describeIn CFrange Extreme values of the time series
 setMethod("CFrange", "CFtime", function(x) .ts_extremes(x))
 
+#' Indicates if the time series is complete
+#'
+#' This function indicates if the time series is complete, meaning that the time
+#' steps are equally spaced and there are thus no gaps in the time series.
+#'
+#' This function gives exact results for time series where the nominal
+#' *unit of separation* between observations in the time series is exact in terms of the
+#' datum unit. As an example, for a datum unit of "days" where the observations
+#' are spaced a fixed number of days apart the result is exact, but if the same
+#' datum unit is used for data that is on monthly a basis, the *assessment* is
+#' approximate because the number of days per month is variable and dependent on
+#' the calendar (the exception being the `360_day` calendar, where the
+#' assessment is exact). The *result* is still correct in most cases (including
+#' all CF-compliant data sets that the developers have seen) although
+#' there may be esoteric constructions of CFtime and offsets that trip up this
+#' implementation.
+#'
+#' @param x An instance of the `CFtime` class
+#'
+#' @returns logical. `TRUE` if the time series is complete, with no gaps;
+#'   `FALSE` otherwise. If no offsets have been added to the CFtime instance,
+#'   `NA` is returned.
+#' @export
+#' @examples
+#' cf <- CFtime("days since 1850-01-01", "julian", 0:364)
+#' CFcomplete(cf)
+CFcomplete <- function(x) {
+  if (nrow(x@time) == 0) NA
+  else .ts_equidistant(x)
+}
+
 #' Equivalence of CFtime objects
 #'
 #' This operator can be used to test if two `CFtime` objects represent the same
@@ -159,6 +195,7 @@ setMethod("CFrange", "CFtime", function(x) .ts_extremes(x))
 #'
 #' @returns `TRUE` if the `CFtime` objects are equivalent, `FALSE` otherwise.
 #' @export
+#' @aliases CFtime-equivalent
 #'
 #' @examples
 #' e1 <- CFtime("days since 1850-01-01", "gregorian", 0:364)
@@ -187,6 +224,7 @@ setMethod("==", c("CFtime", "CFtime"), function(e1, e2)
 #' instances of `CFtime` that the operator operates on. If the datums of the `CFtime`
 #' instances are not equivalent, an error is thrown.
 #' @export
+#' @aliases CFtime-merge
 #'
 #' @examples
 #' e1 <- CFtime("days since 1850-01-01", "gregorian", 0:364)
@@ -224,6 +262,7 @@ setMethod("+", c("CFtime", "CFtime"), function(e1, e2)
 #' @returns A `CFtime` object with offsets composed of the `CFtime` instance and
 #'   the numeric vector.
 #' @export
+#' @aliases CFtime-append
 #'
 #' @examples
 #' e1 <- CFtime("days since 1850-01-01", "gregorian", 0:364)
@@ -278,54 +317,118 @@ setMethod("+", c("CFtime", "numeric"), function(e1, e2) {if (.validOffsets(e2)) 
   }
 }
 
-#' Decompose a vector of offsets, in units of the datum, to their timestamp values
+#' Indicates if the time series has equidistant time steps
+#'
+#' This function returns `TRUE` if the time series has uniformly distributed
+#' time steps between the extreme values, `FALSE` otherwise. First test without
+#' sorting; this should work for most data sets. If not, only then offsets are
+#' sorted. For most data sets that will work but for implied resolutions of
+#' month, season, year, etc based on a "days" or finer datum unit this will fail
+#' due to the fact that those coarser units have a variable number of days per
+#' time step, in all calendars except for `360_day`. For now, an approximate
+#' solution is used that should work in all but the most non-conformal exotic
+#' arrangements.
+#'
+#' This function should only be called after offsets have been added.
+#'
+#' This is an internal function that should not be used outside of the CFtime
+#' package.
+#'
+#' @param x CFtime. The time series to operate on.
+#'
+#' @returns `TRUE` if all time steps are equidistant, `FALSE` otherwise.
+#'
+#' @noRd
+.ts_equidistant <- function(x) {
+  out <- all(diff(x@time$offset) == x@resolution)
+  if (!out) {
+    srt <- sort(x@time$offset)
+    out <- all(diff(srt) == x@resolution)
+    if (!out) {
+      # Here comes the hard work
+
+      # Don't try to make sense of totally non-standard arrangements such as
+      # datum units "years" or "months" describing sub-daily time steps
+      if (x@datum@unit > 4) {
+        out <- FALSE
+      } else {
+        # Check if we have monthly or yearly data on a finer-scale datum
+        # This is all rather approximate but should be fine in most cases
+        # This accommodates middle-of-the-time-period offsets as per the CF Metadata Conventions
+        # Please report problems at https://github.com/pvanlaake/CFtime/issues
+        sorttime <- x@time[with(x@time, order(offset)), ]
+        rng <- range(diff(sorttime$offset)) * CFt$units$per_day[x@datum@unit]
+        if ((rng[1] >= 28 && rng[2] <= 31) || (rng[1] >= 364.5 && rng[2] <= 366)) {
+          ts <- (sorttime$year * 365.2425 + sorttime$month * 365.2425 / 12 + sorttime$day)
+          out <- all(diff(diff(ts)) <= (2 * CFt$units$per_day[x@datum@unit]))
+        } else out <- FALSE
+      }
+    }
+  }
+  out
+}
+
+#' Decompose a vector of offsets, in units of the datum, to their timestamp
+#' values
 #'
 #' This function adds a specified amount of time to the origin of a CFts object.
 #'
-#' This is an internal function that should not be used outside of the CFtime package.
+#' This is an internal function that should not be used outside of the CFtime
+#' package.
 #'
-#' This functions introduces an error where the datum unit is "months" or "years",
-#' due to the ambiguous definition of these units.
+#' This functions may introduce inaccuracies where the datum unit is "months" or
+#' "years", due to the ambiguous definition of these units.
 #'
 #' @param offsets numeric. Vector of offsets to add to the datum.
 #' @param datum CFdatum. The datum that defines the unit of the offsets and the
-#' origin to add the offsets to.
+#'   origin to add the offsets to.
 #'
 #' @returns A data.frame with columns for the timestamp elements and the offset
-#' value and as many rows as there are offsets.
+#'   value and as many rows as there are offsets.
 #' @noRd
 .add_offsets <- function(offsets, datum) {
   len <- length(offsets)
 
-  # First add time: convert to seconds first, then recompute time parts
-  secs <- offsets * CFt$units$seconds[datum@unit]
-  secs <- secs + datum@origin$hour[1] * 3600 + datum@origin$minute[1] * 60 + datum@origin$second[1]
-  days <- secs %/% 86400            # overflow days
-  secs <- round(secs %% 86400, 3)   # drop overflow days from time, round down to milli-seconds avoid errors
+  if (datum@unit <= 4) { # Days, hours, minutes, seconds
+    # First add time: convert to seconds first, then recompute time parts
+    secs <- offsets * CFt$units$seconds[datum@unit]
+    secs <- secs + datum@origin$hour[1] * 3600 + datum@origin$minute[1] * 60 + datum@origin$second[1]
+    days <- secs %/% 86400            # overflow days
+    secs <- round(secs %% 86400, 3)   # drop overflow days from time, round down to milli-seconds avoid errors
 
-  # Time elements for output
-  hrs <- secs %/% 3600
-  mins <- (secs %% 3600) %/% 60
-  secs <- secs %% 60
+    # Time elements for output
+    hrs <- secs %/% 3600
+    mins <- (secs %% 3600) %/% 60
+    secs <- secs %% 60
 
-  # Now add days using the calendar of the datum
-  origin <- unlist(datum@origin[1,1:3]) # origin ymd as a named vector
-  if (any(days > 0)) {
-    switch (datum@cal_id,
-            out <- .offset2date_standard(days, origin),
-            out <- .offset2date_julian(days, origin),
-            out <- .offset2date_360(days, origin),
-            out <- .offset2date_fixed(days, origin, c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31), 365),
-            out <- .offset2date_fixed(days, origin, c(31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31), 366))
-  } else {
-    out <- data.frame(year = rep(origin[1], len), month = rep(origin[2], len), day = rep(origin[3], len))
+    # Now add days using the calendar of the datum
+    origin <- unlist(datum@origin[1,1:3]) # origin ymd as a named vector
+    if (any(days > 0)) {
+      switch (datum@cal_id,
+              out <- .offset2date_standard(days, origin),
+              out <- .offset2date_julian(days, origin),
+              out <- .offset2date_360(days, origin),
+              out <- .offset2date_fixed(days, origin, c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31), 365),
+              out <- .offset2date_fixed(days, origin, c(31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31), 366))
+    } else {
+      out <- data.frame(year = rep(origin[1], len), month = rep(origin[2], len), day = rep(origin[3], len))
+    }
+
+    # Put it all back together again
+    out$hour <- hrs
+    out$minute <- mins
+    out$second <- secs
+    out$tz <- rep(datum@origin$tz, len)
+  } else { # Months, years
+    out <- datum@origin[rep(1, len), ]
+    if (datum@unit == 5) { # Offsets are months
+      months <- out$month + offsets - 1
+      out$month <- months %% 12 + 1
+      out$year <- out$year + months %/% 12
+    } else {               # Offsets are years
+      out$year <- out$year + offsets
+    }
   }
-
-  # Put it all back together again
-  out$hour <- hrs
-  out$minute <- mins
-  out$second <- secs
-  out$tz <- rep(datum@origin$tz, len)
   out$offset <- offsets
   return(out)
 }
@@ -349,7 +452,7 @@ setMethod("+", c("CFtime", "numeric"), function(e1, e2) {if (.validOffsets(e2)) 
   over <- which(m > 12)
   m[over] <- m[over] - 12
   y[over] <- y[over] + 1
-  data.frame(year = y, month = m, day = d)
+  data.frame(year = y, month = m, day = d, row.names = NULL)
 }
 
 #' Fixed year length, either 365_day or 366_day
@@ -382,7 +485,7 @@ setMethod("+", c("CFtime", "numeric"), function(e1, e2) {if (.validOffsets(e2)) 
     }
     return(c(y, m, d))
   }, yr, origin[2], x)
-  data.frame(year = ymd[1,], month = ymd[2,], day = ymd[3,])
+  data.frame(year = ymd[1,], month = ymd[2,], day = ymd[3,], row.names = NULL)
 }
 
 #' Julian calendar offsetting
@@ -431,7 +534,7 @@ setMethod("+", c("CFtime", "numeric"), function(e1, e2) {if (.validOffsets(e2)) 
     }
     return(c(y, m, d))
   }, yr, origin[2], x)
-  data.frame(year = ymd[1,], month = ymd[2,], day = ymd[3,])
+  data.frame(year = ymd[1,], month = ymd[2,], day = ymd[3,], row.names = NULL)
 }
 
 #' Standard calendar offsetting
@@ -476,6 +579,6 @@ setMethod("+", c("CFtime", "numeric"), function(e1, e2) {if (.validOffsets(e2)) 
     }
     return(c(y, m, d))
   }, origin[1], origin[2], x)
-  data.frame(year = ymd[1,], month = ymd[2,], day = ymd[3,])
+  data.frame(year = ymd[1,], month = ymd[2,], day = ymd[3,], row.names = NULL)
 }
 

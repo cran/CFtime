@@ -1,3 +1,29 @@
+# CFtime 1.2.0
+
+Changes since release 1.1.0:
+
+* Datum units "years" and "months" added. While these units are discouraged by
+the CF Metadata Conventions due to their problematic definition, there are quite
+a few data sets out there that use these units nonetheless. For this reason,
+reading existing files with such datum units is supported (converting offsets to
+time elements is easy) but parsing timestamps is not (calculating offsets from
+time elements is possible but tedious and slow). Should there be a definite need,
+open an issue on GitHub and make a *very good* case why this functionality is
+required.
+* CFresolution() returns the average separation between elements in a time series,
+in units of the datum.
+* CFcomplete() indicates if the time series is complete, meaning that there are
+no gaps in the time series. This also works for time series with a somewhat 
+variable length such as monthly data with a "days" datum unit. This works for 
+all but the most exotic time dimension constructions.
+* CFtimestamp() produces a timestamp for all midnight values if the datum unit is
+"hours", "minutes" or "seconds". The "time" format has been removed. For "standard",
+"gregorian" and "proleptic_gregorian" calendars output can be generated as POSIXct
+by specifying the new argument `asPOSIX = TRUE` -- defaults to `FALSE`, the
+previous behaviour so the API is not broken.
+* Minor documentation updates.
+* Assorted minor code fixes, see GitHub commits.
+
 # CFtime 1.1.0
 
 Changes since release 1.0.0:

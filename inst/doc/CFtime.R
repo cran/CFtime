@@ -28,11 +28,8 @@ nc <- nc_open(list.files(path = system.file("extdata", package = "CFtime"), full
 attrs <- ncatt_get(nc, "")
 attrs$title
 
-# "Conventions" global attribute must have a string like "CF-1.7" for this package to work reliably
+# "Conventions" global attribute must have a string like "CF-1.*" for this package to work reliably
 attrs$Conventions
-
-experiment <- attrs$experiment_id
-experiment
 
 # Create the CFtime instance from the metadata in the file.
 cf <- CFtime(nc$dim$time$units, nc$dim$time$calendar, nc$dim$time$vals)
@@ -63,7 +60,7 @@ future <- CFfactor(cf, epoch = list(early = 2021:2040, mid = 2041:2060, late = 2
 str(future)
 
 ## -----------------------------------------------------------------------------
-# How many time units fits in a factor level?
+# How many time units fit in a factor level?
 CFfactor_units(cf, baseline)
 
 # What's the absolute and relative coverage of our time series

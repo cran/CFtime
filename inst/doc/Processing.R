@@ -20,7 +20,7 @@ str(baseline)
 str(future)
 
 ## -----------------------------------------------------------------------------
-# Read the data from the netCDF file.
+# Read the data from the NetCDF file.
 # Keep degenerate dimensions so that we have a predictable data structure: 3-dimensional array.
 # Converts units of kg m-2 s-1 to mm/day.
 pr <- ncvar_get(nc, "pr", collapse_degen = FALSE) * 86400
@@ -45,7 +45,7 @@ ano <- mapply(function(pr, f) {(pr - pr_base) * CFfactor_units(cf, f)}, pr_futur
 
 # Plot the results
 plot(1:12, ano$early[,1,1], type = "o", col = "blue", ylim = c(-50, 40), xlim = c(1, 12), 
-     main = paste0("Hamilton, New Zealand\n", experiment), 
+     main = paste0("Hamilton, New Zealand\nExperiment: ", experiment), 
      xlab = "month", ylab = "Precipitation anomaly (mm)")
 lines(1:12, ano$mid[,1,1], type = "o", col = "green")
 lines(1:12, ano$late[,1,1], type = "o", col = "red")
@@ -67,7 +67,7 @@ ano <- lapply(lf, function(fn) {
   pr_base <- apply(pr, 1:2, tapply, baseline, mean)
   future <- CFfactor(cf, epoch = list(early = 2021:2040, mid = 2041:2060, late = 2061:2080))
   pr_future <- lapply(future, function(f) apply(pr, 1:2, tapply, f, mean))
-  lapply(pr_future, function(x) (x - pr_base) * CFmonth_days(cf))
+  mapply(function(pr, f) {(pr - pr_base) * CFfactor_units(cf, f)}, pr_future, future, SIMPLIFY = FALSE)
 })
 
 # Epoch names
