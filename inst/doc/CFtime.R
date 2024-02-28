@@ -60,6 +60,9 @@ future <- CFfactor(cf, epoch = list(early = 2021:2040, mid = 2041:2060, late = 2
 str(future)
 
 ## -----------------------------------------------------------------------------
+# Is the time series complete?
+CFcomplete(cf)
+
 # How many time units fit in a factor level?
 CFfactor_units(cf, baseline)
 

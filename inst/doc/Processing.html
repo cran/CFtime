@@ -472,7 +472,7 @@ way of constructing an ensemble is to perform the desired analysis on
 every ensemble member individually and to combine them only in the final
 step and to then perform any ensemble operations such as computing
 confidence intervals. The design of the CFtime package makes it easy to
-do this, through it heavy use of lists. Building on the previous
+do this, through its heavy use of lists. Building on the previous
 example, let’s make a multi-model ensemble of 2 models (not much of an
 ensemble but such are the limitations of including data with packages -
 the example easily extends to a larger set of ensemble members).</p>
@@ -553,7 +553,9 @@ sanity here, which should really be included. This function only makes
 sense for a single [domain, GCM/RCM, experiment, variable] combination.
 Also be aware of data size, CORDEX files are huge and stitching all
 domain data together will easily exhaust available memory and it may
-thus lead to very large swap files and very poor performance.)</p>
+thus lead to very large swap files and very poor performance - use the
+<code>CFsubset()</code> function to read temporal chunks of data to
+avoid such problems.)</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">library</span>(ncdf4)</span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">library</span>(abind)</span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a></span>
@@ -596,8 +598,8 @@ produces offsets in chronological order.)</p>
 <div id="acknowledgements" class="section level2">
 <h2>Acknowledgements</h2>
 <p>The results presented contain modified data from Copernicus Climate
-Change Service information, 2023. Neither the European Commission nor
-ECMWF is responsible for any use that may be made of the Copernicus
+Change Service information, 2023-2024. Neither the European Commission
+nor ECMWF is responsible for any use that may be made of the Copernicus
 information or data it contains.</p>
 <p>We acknowledge the World Climate Research Programme, which, through
 its Working Group on Coupled Modelling, coordinated and promoted CMIP6.

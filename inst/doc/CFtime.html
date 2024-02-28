@@ -415,6 +415,18 @@ different calendars allowed by the CF Metadata Conventions. It properly
 formats dates and times (even oddball dates like
 <code>2070-02-30</code>) and it can generate calendar-aware factors for
 further processing of the data.</p>
+<div id="time-zones" class="section level5">
+<h5>Time zones</h5>
+<p>The character of CF time series - a number of numerical offsets from
+a base date - implies that there should only be a single time zone
+associated with the time series. The time zone offset from UTC is stored
+in the datum and can be retrieved with the <code>CFtimezone()</code>
+function. If a vector of character timestamps with time zone information
+is parsed with the <code>CFparse()</code> function and the time zones
+are found to be different from the datum time zone, a warning message is
+generated but the timestamp is interpreted as being in the datum time
+zone. No correction of timestamp to datum time zone is performed.</p>
+</div>
 </div>
 <div id="using-cftime-to-deal-with-calendars" class="section level2">
 <h2>Using CFtime to deal with calendars</h2>
@@ -572,24 +584,35 @@ the month.</li>
 </ul>
 <div id="incomplete-time-series" class="section level5">
 <h5>Incomplete time series</h5>
+<p>You can test if your time series is complete with the function
+<code>CFcomplete()</code>. A time series is considered complete if the
+time steps between the two extreme values are equally spaced. There is a
+“fuzzy” assessment of completeness for time series with a datum unit of
+“days” or smaller where the time steps are months or years apart - these
+have different lengths in days in different months or years (e.g. a leap
+year).</p>
 <p>If your time series is incomplete, for instance because it has
-<code>NA</code> values in them or missing time steps, you should
-recognize that in your further processing. As an example, you might want
-to filter out months that have fewer than 90% of daily data from further
-processing or apply weights based on the actual coverage.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># How many time units fit in a factor level?</span></span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">CFfactor_units</span>(cf, baseline)</span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt;  [1] 31 28 31 30 31 30 31 31 30 31 30 31</span></span>
+missing time steps, you should recognize that in your further
+processing. As an example, you might want to filter out months that have
+fewer than 90% of daily data from further processing or apply weights
+based on the actual coverage.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Is the time series complete?</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">CFcomplete</span>(cf)</span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
 <span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a></span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co"># What&#39;s the absolute and relative coverage of our time series</span></span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, baseline, <span class="st">&quot;absolute&quot;</span>)</span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt;  [1] 186 168 186 180 186 180 186 186 180 186 180 186</span></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, baseline, <span class="st">&quot;relative&quot;</span>)</span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt;  [1] 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2</span></span></code></pre></div>
-<p>The coverage of the baseline epoch is apparently only 20%! Recall
-that the time series starts in 2015 while the baseline period is for
-<code>1991:2020</code> so that’s only 6 years of data out of 30 years of
-the baseline period.</p>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co"># How many time units fit in a factor level?</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="fu">CFfactor_units</span>(cf, baseline)</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt;  [1] 31 28 31 30 31 30 31 31 30 31 30 31</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co"># What&#39;s the absolute and relative coverage of our time series</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, baseline, <span class="st">&quot;absolute&quot;</span>)</span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt;  [1] 186 168 186 180 186 180 186 186 180 186 180 186</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, baseline, <span class="st">&quot;relative&quot;</span>)</span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt;  [1] 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2</span></span></code></pre></div>
+<p>The time series is complete but coverage of the baseline epoch is
+only 20%! Recall that the time series starts in 2015 while the baseline
+period in the factor is for <code>1991:2020</code> so that’s only 6
+years of time series data out of 30 years of the baseline factor.</p>
 <p>An artificial example of missing data:</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># 4 years of data on a `365_day` calendar, keep 80% of values</span></span>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">365</span> <span class="sc">*</span> <span class="dv">4</span></span>
@@ -608,23 +631,24 @@ the baseline period.</p>
 <span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a></span>
 <span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>mon <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(cf, <span class="st">&quot;month&quot;</span>)</span>
 <span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, mon, <span class="st">&quot;absolute&quot;</span>)</span>
-<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt;  [1] 24 22 27 19 23 23 23 26 24 23 26 24 26 19 25 23 27 23 27 23 22 22 25 27 28</span></span>
-<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="co">#&gt; [26] 24 23 26 30 24 24 28 23 25 20 22 26 23 26 23 21 21 29 25 28 26 24 26</span></span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt;  [1] 27 23 23 25 22 26 25 24 26 23 21 25 26 19 28 25 27 26 23 27 22 28 25 25 27</span></span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="co">#&gt; [26] 25 23 24 25 24 25 27 22 21 22 19 20 22 26 20 27 25 25 24 26 25 23 30</span></span>
 <span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, mon, <span class="st">&quot;relative&quot;</span>)</span>
-<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt;  [1] 0.7741935 0.7857143 0.8709677 0.6333333 0.7419355 0.7666667 0.7419355</span></span>
-<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt;  [8] 0.8387097 0.8000000 0.7419355 0.8666667 0.7741935 0.8387097 0.6785714</span></span>
-<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; [15] 0.8064516 0.7666667 0.8709677 0.7666667 0.8709677 0.7419355 0.7333333</span></span>
-<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt; [22] 0.7096774 0.8333333 0.8709677 0.9032258 0.8571429 0.7419355 0.8666667</span></span>
-<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt; [29] 0.9677419 0.8000000 0.7741935 0.9032258 0.7666667 0.8064516 0.6666667</span></span>
-<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt; [36] 0.7096774 0.8387097 0.8214286 0.8387097 0.7666667 0.6774194 0.7000000</span></span>
-<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a><span class="co">#&gt; [43] 0.9354839 0.8064516 0.9333333 0.8387097 0.8000000 0.8387097</span></span></code></pre></div>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt;  [1] 0.8709677 0.8214286 0.7419355 0.8333333 0.7096774 0.8666667 0.8064516</span></span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt;  [8] 0.7741935 0.8666667 0.7419355 0.7000000 0.8064516 0.8387097 0.6785714</span></span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; [15] 0.9032258 0.8333333 0.8709677 0.8666667 0.7419355 0.8709677 0.7333333</span></span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt; [22] 0.9032258 0.8333333 0.8064516 0.8709677 0.8928571 0.7419355 0.8000000</span></span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt; [29] 0.8064516 0.8000000 0.8064516 0.8709677 0.7333333 0.6774194 0.7333333</span></span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt; [36] 0.6129032 0.6451613 0.7857143 0.8387097 0.6666667 0.8709677 0.8333333</span></span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a><span class="co">#&gt; [43] 0.8064516 0.7741935 0.8666667 0.8064516 0.7666667 0.9677419</span></span></code></pre></div>
 <p>Keep in mind, though, that there are data sets where the time unit is
 lower than the intended resolution of the data. Since the CF conventions
 recommend that the coarsest time unit is “day”, many files with monthly
 data sets have a definition like <code>days since 2016-01-01</code> with
 offset values for the middle of the month like
-<code>15, 45, 75, 105, ...</code>. You can verify this in the
-information that is printed for a <code>CFtime</code> object.</p>
+<code>15, 44, 74, 104, ...</code>. Even in these scenarios you can
+verify that your data set is complete with the function
+<code>CFcomplete()</code>.</p>
 </div>
 </div>
 <div id="cftime-and-posixt" class="section level2">
@@ -714,8 +738,9 @@ data”</a>.</p>
 projection data. It is not a full implementation of the CF Metadata
 Conventions “time” component.</li>
 <li>In parsing and deparsing of offsets and timestamps, data is rounded
-to milli-second precision. When using units of “days” or “hours”, this
-may lead to some loss of precision due to rounding errors. If
+to 3 digits of precision of the unit of the datum. When using a
+description of time that is very different from the datum unit, this may
+lead to some loss of precision due to rounding errors. For instance, if
 milli-second precision is required, use a unit of “seconds”. The authors
 have no knowledge of published climate projection data that requires
 milli-second precision so for the intended use of the package this issue
