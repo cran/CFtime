@@ -20,12 +20,17 @@
 #' specified time unit. In the result of this function, if the fraction is
 #' associated with the minute or the hour, it is converted into a regular
 #' `hh:mm:ss.sss` format, i.e. any fraction in the result is always associated
-#' with the second, rounded down to milli-second accuracy. The time zone is
-#' optional and should have at least the hour or `Z` if present, the minute is
-#' optional. The time zone hour can have an optional sign. The separator between
-#' the date and the time can be a single whitespace character or a `T`; in the
-#' UDUNITS format the separator between the time and the time zone must be a
-#' single whitespace character.
+#' with the second, rounded down to milli-second accuracy. The separator between
+#' the date and the time can be a single whitespace character or a `T`.
+#'
+#' The time zone is optional and should have at least the hour or `Z` if
+#' present, the minute is optional. The time zone hour can have an optional
+#' sign. In the UDUNITS format the separator between the time and the time zone
+#' must be a single whitespace character, in ISO8601 there is no separation
+#' between the time and the timezone. Time zone names are not supported (as
+#' neither UDUNITS nor ISO8601 support them) and will cause parsing to fail when
+#' supplied, with one exception: the designator "UTC" is silently dropped (i.e.
+#' interpreted as "00:00").
 #'
 #' Currently only the extended formats (with separators between the elements)
 #' are supported. The vector of timestamps may have any combination of ISO8601
@@ -62,7 +67,7 @@ CFparse <- function(cf, x) {
     warning("Some dates could not be parsed. Result contains `NA` values.")
   if (length(unique(out$tz)) > 1)
     warning("Timestamps have multiple time zones. Some or all may be different from the datum time zone.")
-  else if (out$tz[1] != CFtimezone(cf))
+  else if (out$tz[1] != timezone(cf))
     warning("Timestamps have time zone that is different from the datum.")
   return(out)
 }
@@ -122,7 +127,7 @@ CFparse <- function(cf, x) {
     "(?::([0-5][0-9]))?",
     "(?:\\.([0-9]*))?",
     ")?",
-    "(?:([Z+-])([01][0-9]|2[0-3])?(?::(00|15|30|45))?",
+    "(?:([Z+-])([01][0-9]|2[0-3])?(?::(00|15|30|45))?", ## FIXME: Z?, smaller number of captures
     ")?$"
   )
 
@@ -152,6 +157,9 @@ CFparse <- function(cf, x) {
                       hour = integer(), minute = integer(), second = numeric(), frac = character(),
                       tz_sign = character(), tz_hour = character(), tz_min = character())
 
+  # Drop "UTC", if given
+  d <- gsub("UTC$", "", d)
+
   cap <- utils::strcapture(iso8601, d, parse)
   missing <- which(is.na(cap$year))
   if (length(missing) > 0)
@@ -180,8 +188,14 @@ CFparse <- function(cf, x) {
   cap$second[is.na(cap$second)] <- 0
 
   # Set timezone to default value where needed
-  cap$tz <- paste0(ifelse(cap$tz_sign == "-", "-", ""),
-                   ifelse(cap$tz_hour == "", "00", cap$tz_hour), ":",
+  ndx <- which(cap$tz_sign == "Z")
+  if (length(ndx) > 0) {
+    cap$tz_sign[ndx] <- "+"
+    cap$tz_hour[ndx] <- "00"
+    cap$tz_min[ndx] <- "00"
+  }
+  cap$tz <- paste0(ifelse(cap$tz_sign == "", "+", cap$tz_sign),
+                   ifelse(cap$tz_hour == "", "00", cap$tz_hour),
                    ifelse(cap$tz_min == "", "00", cap$tz_min))
   cap$tz_sign <- cap$tz_hour <- cap$tz_min <- NULL
 
@@ -190,7 +204,7 @@ CFparse <- function(cf, x) {
   cap$day[is.na(cap$day)] <- 1
 
   # Check date validity
-  invalid <- mapply(function(y, m, d) {!.is_valid_calendar_date(y, m, d, calendar_id(datum))},
+  invalid <- mapply(function(y, m, d) {!.is_valid_calendar_date(y, m, d, datum@cal_id)},
                     cap$year, cap$month, cap$day)
   if (nrow(datum@origin) > 0) {
     earlier <- mapply(function(y, m, d, dy, dm, dd) {
@@ -210,7 +224,7 @@ CFparse <- function(cf, x) {
   if (nrow(datum@origin) == 0) {        # if there's no datum yet, don't calculate offsets
     cap$offset <- rep(0, nrow(cap))     # this happens, f.i., when a CFdatum is created
   } else {
-    days <- switch(calendar_id(datum),
+    days <- switch(datum@cal_id,
                    .date2offset_standard(cap, datum@origin),
                    .date2offset_julian(cap, datum@origin),
                    .date2offset_360day(cap, datum@origin),

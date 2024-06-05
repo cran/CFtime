@@ -49,7 +49,7 @@ overflow: visible;
 </style>
 <style type="text/css" data-origin="pandoc">
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span { line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -392,12 +392,12 @@ days to this <em>datum</em> for a data set that uses the
 after the <em>datum</em>:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># POSIXt calculations on a standard calendar - INCORRECT</span></span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">as.Date</span>(<span class="st">&quot;1949-12-01&quot;</span>) <span class="sc">+</span> <span class="dv">43289</span></span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;2068-06-08&quot;</span></span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co"># CFtime calculation on a &quot;360_day&quot; calendar - CORRECT</span></span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co"># See below examples for details on the two functions</span></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="fu">CFtimestamp</span>(<span class="fu">CFtime</span>(<span class="st">&quot;days since 1949-12-01&quot;</span>, <span class="st">&quot;360_day&quot;</span>, <span class="dv">43289</span>))</span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co">#&gt; [1] &quot;2070-02-30&quot;</span></span></code></pre></div>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;2068-06-08&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co"># CFtime calculation on a &quot;360_day&quot; calendar - CORRECT</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co"># See below examples for details on the two functions</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="fu">as_timestamp</span>(<span class="fu">CFtime</span>(<span class="st">&quot;days since 1949-12-01&quot;</span>, <span class="st">&quot;360_day&quot;</span>, <span class="dv">43289</span>))</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;2070-02-30&quot;</span></span></code></pre></div>
 <p>Using standard <code>POSIXt</code> calculations gives a result that
 is about 21 months off from the correct date - obviously an undesirable
 situation. This example is far from artificial: <code>1949-12-01</code>
@@ -420,7 +420,7 @@ further processing of the data.</p>
 <p>The character of CF time series - a number of numerical offsets from
 a base date - implies that there should only be a single time zone
 associated with the time series. The time zone offset from UTC is stored
-in the datum and can be retrieved with the <code>CFtimezone()</code>
+in the datum and can be retrieved with the <code>timezone()</code>
 function. If a vector of character timestamps with time zone information
 is parsed with the <code>CFparse()</code> function and the time zones
 are found to be different from the datum time zone, a warning message is
@@ -436,15 +436,16 @@ specified <em>calendar</em>, from which other points in time are
 calculated by adding a specified <em>offset</em> of a certain
 <em>unit</em>. This approach is encapsulated in the <code>CFtime</code>
 package by the S4 class <code>CFtime</code>.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Create a CF time object from a definition string, a calendar and some offsets</span></span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(<span class="st">&quot;days since 1949-12-01&quot;</span>, <span class="st">&quot;360_day&quot;</span>, <span class="dv">19830</span><span class="sc">:</span><span class="dv">90029</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>cf</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; CF datum of origin:</span></span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1949-12-01 00:00:00</span></span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt;   Calendar: 360_day</span></span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; CF time series:</span></span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt;   Elements: [2005-01-01 .. 2199-12-30] (average of 1.000000 days between 70200 elements)</span></span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Create a CF time object from a definition string, a calendar and some offsets</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(<span class="st">&quot;days since 1949-12-01&quot;</span>, <span class="st">&quot;360_day&quot;</span>, <span class="dv">19830</span><span class="sc">:</span><span class="dv">90029</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>cf</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a><span class="co">#&gt; CF datum of origin:</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1949-12-01 00:00:00</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt;   Calendar: 360_day</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt; CF time series:</span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt;   Elements: [2005-01-01 .. 2199-12-30] (average of 1.000000 days between 70200 elements)</span></span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt;   Bounds  : not set</span></span></code></pre></div>
 <p>The <code>CFtime()</code> function takes a <em>datum</em> description
 (which is actually a unit - “days” - in reference to a datum -
 “1949-12-01”), a calendar description, and a vector of <em>offsets</em>
@@ -459,26 +460,30 @@ Conventions that this file adheres to (among possible others). Not
 surprisingly, all the pieces of interest are contained in the mandatory
 <code>time</code> dimension of the file. The process then becomes as
 follows, for a CMIP6 file of daily precipitation:</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Opening a data file that is included with the package and showing some attributes.</span></span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co"># Usually you would `list.files()` on a directory of your choice.</span></span>
-<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>nc <span class="ot">&lt;-</span> <span class="fu">nc_open</span>(<span class="fu">list.files</span>(<span class="at">path =</span> <span class="fu">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="at">package =</span> <span class="st">&quot;CFtime&quot;</span>), <span class="at">full.names =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span>])</span>
-<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>attrs <span class="ot">&lt;-</span> <span class="fu">ncatt_get</span>(nc, <span class="st">&quot;&quot;</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>attrs<span class="sc">$</span>title</span>
-<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; [1] &quot;NOAA GFDL GFDL-ESM4 model output prepared for CMIP6 update of RCP4.5 based on SSP2&quot;</span></span>
-<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a></span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co"># &quot;Conventions&quot; global attribute must have a string like &quot;CF-1.*&quot; for this package to work reliably</span></span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>attrs<span class="sc">$</span>Conventions</span>
-<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;CF-1.7 CMIP-6.0 UGRID-1.0&quot;</span></span>
-<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a></span>
-<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co"># Create the CFtime instance from the metadata in the file.</span></span>
-<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>units, nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>calendar, nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>vals)</span>
-<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>cf</span>
-<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; CF datum of origin:</span></span>
-<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1850-01-01 00:00:00</span></span>
-<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
-<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt;   Calendar: noleap</span></span>
-<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt; CF time series:</span></span>
-<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt;   Elements: [2015-01-01T12:00:00 .. 2099-12-31T12:00:00] (average of 1.000000 days between 31025 elements)</span></span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># Opening a data file that is included with the package and showing some attributes.</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co"># Usually you would `list.files()` on a directory of your choice.</span></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>fn <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="at">path =</span> <span class="fu">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="at">package =</span> <span class="st">&quot;CFtime&quot;</span>), <span class="at">full.names =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span>]</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>nc <span class="ot">&lt;-</span> <span class="fu">nc_open</span>(fn)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>attrs <span class="ot">&lt;-</span> <span class="fu">ncatt_get</span>(nc, <span class="st">&quot;&quot;</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>attrs<span class="sc">$</span>title</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; [1] &quot;NOAA GFDL GFDL-ESM4 model output prepared for CMIP6 update of RCP4.5 based on SSP2&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co"># &quot;Conventions&quot; global attribute must have a string like &quot;CF-1.*&quot; for this package to work reliably</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>attrs<span class="sc">$</span>Conventions</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;CF-1.7 CMIP-6.0 UGRID-1.0&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co"># Create the CFtime instance from the metadata in the file.</span></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>units, </span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>             nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>calendar, </span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>             nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>vals)</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>cf</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; CF datum of origin:</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1850-01-01 00:00:00</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt;   Calendar: noleap</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; CF time series:</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt;   Elements: [2015-01-01 12:00:00 .. 2099-12-31 12:00:00] (average of 1.000000 days between 31025 elements)</span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt;   Bounds  : not set</span></span></code></pre></div>
 <p>You can see from the global attribute “Conventions” that the file
 adheres to the CF Metadata Conventions, among others. According to the
 CF conventions, <code>units</code> and <code>calendar</code> are
@@ -490,27 +495,30 @@ file, and <code>nc$dim$time$vals</code> are the offset values, or
 <code>ncdf4</code> package. If you are using the <code>RNetCDF</code>
 package, checking for CF conventions and then creating a
 <code>CFtime</code> instance goes like this:</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">library</span>(RNetCDF)</span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>nc <span class="ot">&lt;-</span> <span class="fu">open.nc</span>(<span class="fu">list.files</span>(<span class="at">path =</span> <span class="fu">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="at">package =</span> <span class="st">&quot;CFtime&quot;</span>), <span class="at">full.names =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span>])</span>
-<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">att.get.nc</span>(nc, <span class="sc">-</span><span class="dv">1</span>, <span class="st">&quot;Conventions&quot;</span>)</span>
-<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;CF-1.7 CMIP-6.0 UGRID-1.0&quot;</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(<span class="fu">att.get.nc</span>(nc, <span class="st">&quot;time&quot;</span>, <span class="st">&quot;units&quot;</span>), <span class="fu">att.get.nc</span>(nc, <span class="st">&quot;time&quot;</span>, <span class="st">&quot;calendar&quot;</span>), <span class="fu">var.get.nc</span>(nc, <span class="st">&quot;time&quot;</span>))</span>
-<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>cf</span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a><span class="co">#&gt; CF datum of origin:</span></span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1850-01-01 00:00:00</span></span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt;   Calendar: noleap</span></span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt; CF time series:</span></span>
-<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt;   Elements: [2015-01-01T12:00:00 .. 2099-12-31T12:00:00] (average of 1.000000 days between 31025 elements)</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">library</span>(RNetCDF)</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>nc <span class="ot">&lt;-</span> <span class="fu">open.nc</span>(fn)</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">att.get.nc</span>(nc, <span class="sc">-</span><span class="dv">1</span>, <span class="st">&quot;Conventions&quot;</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;CF-1.7 CMIP-6.0 UGRID-1.0&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(<span class="fu">att.get.nc</span>(nc, <span class="st">&quot;time&quot;</span>, <span class="st">&quot;units&quot;</span>), </span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>             <span class="fu">att.get.nc</span>(nc, <span class="st">&quot;time&quot;</span>, <span class="st">&quot;calendar&quot;</span>), </span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>             <span class="fu">var.get.nc</span>(nc, <span class="st">&quot;time&quot;</span>))</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>cf</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; CF datum of origin:</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1850-01-01 00:00:00</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt;   Calendar: noleap</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; CF time series:</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt;   Elements: [2015-01-01 12:00:00 .. 2099-12-31 12:00:00] (average of 1.000000 days between 31025 elements)</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt;   Bounds  : not set</span></span></code></pre></div>
 <p>The corresponding character representations of the time series can be
 easily generated:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>dates <span class="ot">&lt;-</span> <span class="fu">CFtimestamp</span>(cf, <span class="at">format =</span> <span class="st">&quot;date&quot;</span>)</span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>dates[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;2015-01-01&quot; &quot;2015-01-02&quot; &quot;2015-01-03&quot; &quot;2015-01-04&quot; &quot;2015-01-05&quot;</span></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;  [6] &quot;2015-01-06&quot; &quot;2015-01-07&quot; &quot;2015-01-08&quot; &quot;2015-01-09&quot; &quot;2015-01-10&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>dates <span class="ot">&lt;-</span> <span class="fu">as_timestamp</span>(cf, <span class="at">format =</span> <span class="st">&quot;date&quot;</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>dates[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;2015-01-01&quot; &quot;2015-01-02&quot; &quot;2015-01-03&quot; &quot;2015-01-04&quot; &quot;2015-01-05&quot;</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt;  [6] &quot;2015-01-06&quot; &quot;2015-01-07&quot; &quot;2015-01-08&quot; &quot;2015-01-09&quot; &quot;2015-01-10&quot;</span></span></code></pre></div>
 <p>…as well as the full range of the time series:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">CFrange</span>(cf)</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;2015-01-01T12:00:00&quot; &quot;2099-12-31T12:00:00&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">range</span>(cf)</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;2015-01-01 12:00:00&quot; &quot;2099-12-31 12:00:00&quot;</span></span></code></pre></div>
 <p>Note that in this latter case, if any of the timestamps in the time
 series have a time that is other than <code>00:00:00</code> then the
 time of the extremes of the time series is also displayed. This is a
@@ -534,27 +542,45 @@ in the vignette <a href="Processing.html">“Processing climate projection
 data”</a>.</p>
 <p>It is easy to generate the factors that you need once you have a
 <code>CFtime</code> instance prepared:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># Create a dekad factor for the whole `cf` time series that was created above</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>f_k <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(cf, <span class="st">&quot;dekad&quot;</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">str</span>(f_k)</span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt;  Factor w/ 3060 levels &quot;2015D01&quot;,&quot;2015D02&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...</span></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;epoch&quot;)= int -1</span></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;period&quot;)= chr &quot;dekad&quot;</span></span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a></span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co"># Create monthly factors for a baseline epoch and early, mid and late 21st century epochs</span></span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>baseline <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(cf, <span class="at">epoch =</span> <span class="dv">1991</span><span class="sc">:</span><span class="dv">2020</span>)</span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>future <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(cf, <span class="at">epoch =</span> <span class="fu">list</span>(<span class="at">early =</span> <span class="dv">2021</span><span class="sc">:</span><span class="dv">2040</span>, <span class="at">mid =</span> <span class="dv">2041</span><span class="sc">:</span><span class="dv">2060</span>, <span class="at">late =</span> <span class="dv">2061</span><span class="sc">:</span><span class="dv">2080</span>))</span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="fu">str</span>(future)</span>
-<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; List of 3</span></span>
-<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt;  $ early: Factor w/ 12 levels &quot;01&quot;,&quot;02&quot;,&quot;03&quot;,..: NA NA NA NA NA NA NA NA NA NA ...</span></span>
-<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;epoch&quot;)= int 20</span></span>
-<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;period&quot;)= chr &quot;month&quot;</span></span>
-<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt;  $ mid  : Factor w/ 12 levels &quot;01&quot;,&quot;02&quot;,&quot;03&quot;,..: NA NA NA NA NA NA NA NA NA NA ...</span></span>
-<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;epoch&quot;)= int 20</span></span>
-<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;period&quot;)= chr &quot;month&quot;</span></span>
-<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt;  $ late : Factor w/ 12 levels &quot;01&quot;,&quot;02&quot;,&quot;03&quot;,..: NA NA NA NA NA NA NA NA NA NA ...</span></span>
-<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;epoch&quot;)= int 20</span></span>
-<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;period&quot;)= chr &quot;month&quot;</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># Create a dekad factor for the whole `cf` time series that was created above</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>f_k <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(cf, <span class="st">&quot;dekad&quot;</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="fu">str</span>(f_k)</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="co">#&gt;  Factor w/ 3060 levels &quot;2015D01&quot;,&quot;2015D02&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...</span></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;epoch&quot;)= int -1</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;period&quot;)= chr &quot;dekad&quot;</span></span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;CFtime&quot;)=Formal class &#39;CFtime&#39; [package &quot;CFtime&quot;] with 4 slots</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt;   .. ..@ datum     :Formal class &#39;CFdatum&#39; [package &quot;CFtime&quot;] with 5 slots</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt;   .. .. .. ..@ definition: chr &quot;days since 1850-01-01&quot;</span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt;   .. .. .. ..@ unit      : int 4</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt;   .. .. .. ..@ origin    :&#39;data.frame&#39;:  1 obs. of  8 variables:</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co">#&gt;   .. .. .. .. ..$ year  : int 1850</span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co">#&gt;   .. .. .. .. ..$ month : num 1</span></span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="co">#&gt;   .. .. .. .. ..$ day   : num 1</span></span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="co">#&gt;   .. .. .. .. ..$ hour  : num 0</span></span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="co">#&gt;   .. .. .. .. ..$ minute: num 0</span></span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a><span class="co">#&gt;   .. .. .. .. ..$ second: num 0</span></span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a><span class="co">#&gt;   .. .. .. .. ..$ tz    : chr &quot;+0000&quot;</span></span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a><span class="co">#&gt;   .. .. .. .. ..$ offset: num 0</span></span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a><span class="co">#&gt;   .. .. .. ..@ calendar  : chr &quot;noleap&quot;</span></span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a><span class="co">#&gt;   .. .. .. ..@ cal_id    : int 4</span></span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a><span class="co">#&gt;   .. ..@ resolution: num 14.9</span></span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a><span class="co">#&gt;   .. ..@ offsets   : num [1:3060] 60230 60240 60250 60261 60271 ...</span></span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a><span class="co">#&gt;   .. ..@ bounds    : logi TRUE</span></span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a><span class="co"># Create monthly factors for a baseline epoch and early, mid and late 21st century epochs</span></span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>baseline <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(cf, <span class="at">epoch =</span> <span class="dv">1991</span><span class="sc">:</span><span class="dv">2020</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>future <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(cf, <span class="at">epoch =</span> <span class="fu">list</span>(<span class="at">early =</span> <span class="dv">2021</span><span class="sc">:</span><span class="dv">2040</span>, <span class="at">mid =</span> <span class="dv">2041</span><span class="sc">:</span><span class="dv">2060</span>, <span class="at">late =</span> <span class="dv">2061</span><span class="sc">:</span><span class="dv">2080</span>))</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="fu">str</span>(future)</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt; List of 3</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">#&gt;  $ early: Factor w/ 12 levels &quot;01&quot;,&quot;02&quot;,&quot;03&quot;,..: NA NA NA NA NA NA NA NA NA NA ...</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;epoch&quot;)= int 20</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;period&quot;)= chr &quot;month&quot;</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt;  $ mid  : Factor w/ 12 levels &quot;01&quot;,&quot;02&quot;,&quot;03&quot;,..: NA NA NA NA NA NA NA NA NA NA ...</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;epoch&quot;)= int 20</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;period&quot;)= chr &quot;month&quot;</span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a><span class="co">#&gt;  $ late : Factor w/ 12 levels &quot;01&quot;,&quot;02&quot;,&quot;03&quot;,..: NA NA NA NA NA NA NA NA NA NA ...</span></span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;epoch&quot;)= int 20</span></span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;period&quot;)= chr &quot;month&quot;</span></span></code></pre></div>
 <p>For the “epoch” version, there are two interesting things to note
 here:</p>
 <ul>
@@ -569,19 +595,41 @@ the epoch. This ensures that the factor is compatible with the data set
 which the time series describes, such that functions like
 <code>tapply()</code> will not throw an error.</li>
 </ul>
-<p>There are five periods defined for <code>CFfactor()</code>:</p>
+<p>There are six periods defined for <code>CFfactor()</code>:</p>
 <ul>
 <li><code>year</code>, to summarize data to yearly timescales</li>
 <li><code>season</code>, the meteorological seasons. Note that the month
 of December will be added to the months of January and February of the
 following year, so the date “2020-12-01” yields the factor value
-“2021-DJF”.</li>
+“2021S1”.</li>
+<li><code>quarter</code>, the standard quarters of the year.</li>
 <li><code>month</code>, monthly summaries, the default period.</li>
 <li><code>dekad</code>, 10-day period. Each month is subdivided in
 dekads as follows: (1) days 01 - 10; (2) days 11 - 20; (3) remainder of
 the month.</li>
 <li><code>day</code>, to summarize sub-daily data.</li>
 </ul>
+<div id="new-time-dimension" class="section level5">
+<h5>New “time” dimension</h5>
+<p>A CFtime instance describes the “time” dimension of an associated
+data set. When you process that dimension of the data set using
+<code>CFfactor()</code> or another method to filter or otherwise subset
+the “time” dimension, the resulting data set will have a different
+“time” dimension. To associate a proper CFtime instance with your
+processing result, the methods in this package return that CFtime
+instance as an attribute:</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>  new_time <span class="ot">&lt;-</span> <span class="fu">attr</span>(f_k, <span class="st">&quot;CFtime&quot;</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  new_time</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="co">#&gt; CF datum of origin:</span></span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1850-01-01 00:00:00</span></span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="co">#&gt;   Calendar: noleap</span></span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a><span class="co">#&gt; CF time series:</span></span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a><span class="co">#&gt;   Elements: [1974-12-26 12:00:00 .. 2099-12-16 00:00:00] (average of 14.911572 days between 3060 elements)</span></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="co">#&gt;   Bounds  : regular and consecutive</span></span></code></pre></div>
+<p>In the vignette <a href="Processing.html">“Processing climate
+projection data”</a> is a fully worked out example of this.</p>
+</div>
 <div id="incomplete-time-series" class="section level5">
 <h5>Incomplete time series</h5>
 <p>You can test if your time series is complete with the function
@@ -596,51 +644,52 @@ missing time steps, you should recognize that in your further
 processing. As an example, you might want to filter out months that have
 fewer than 90% of daily data from further processing or apply weights
 based on the actual coverage.</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># Is the time series complete?</span></span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">CFcomplete</span>(cf)</span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a></span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co"># How many time units fit in a factor level?</span></span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="fu">CFfactor_units</span>(cf, baseline)</span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt;  [1] 31 28 31 30 31 30 31 31 30 31 30 31</span></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a></span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co"># What&#39;s the absolute and relative coverage of our time series</span></span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, baseline, <span class="st">&quot;absolute&quot;</span>)</span>
-<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt;  [1] 186 168 186 180 186 180 186 186 180 186 180 186</span></span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, baseline, <span class="st">&quot;relative&quot;</span>)</span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt;  [1] 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Is the time series complete?</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="fu">is_complete</span>(cf)</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="co"># How many time units fit in a factor level?</span></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="fu">CFfactor_units</span>(cf, baseline)</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co">#&gt;  [1] 31 28 31 30 31 30 31 31 30 31 30 31</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="co"># What&#39;s the absolute and relative coverage of our time series</span></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, baseline, <span class="st">&quot;absolute&quot;</span>)</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="co">#&gt;  [1] 186 168 186 180 186 180 186 186 180 186 180 186</span></span></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, baseline, <span class="st">&quot;relative&quot;</span>)</span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="co">#&gt;  [1] 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2</span></span></code></pre></div>
 <p>The time series is complete but coverage of the baseline epoch is
 only 20%! Recall that the time series starts in 2015 while the baseline
 period in the factor is for <code>1991:2020</code> so that’s only 6
 years of time series data out of 30 years of the baseline factor.</p>
 <p>An artificial example of missing data:</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># 4 years of data on a `365_day` calendar, keep 80% of values</span></span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">365</span> <span class="sc">*</span> <span class="dv">4</span></span>
-<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>cov <span class="ot">&lt;-</span> <span class="fl">0.8</span></span>
-<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>offsets <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">0</span><span class="sc">:</span>(n<span class="dv">-1</span>), n <span class="sc">*</span> cov)</span>
-<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(<span class="st">&quot;days since 2020-01-01&quot;</span>, <span class="st">&quot;365_day&quot;</span>, offsets)</span>
-<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>cf</span>
-<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt; CF datum of origin:</span></span>
-<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt;   Origin  : 2020-01-01 00:00:00</span></span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
-<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt;   Calendar: 365_day</span></span>
-<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="co">#&gt; CF time series:</span></span>
-<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt;   Elements: [2020-01-01 .. 2023-12-31] (average of 1.250214 days between 1168 elements)</span></span>
-<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a><span class="co"># Note that there are about 1.25 days between observations</span></span>
-<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a></span>
-<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>mon <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(cf, <span class="st">&quot;month&quot;</span>)</span>
-<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, mon, <span class="st">&quot;absolute&quot;</span>)</span>
-<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a><span class="co">#&gt;  [1] 27 23 23 25 22 26 25 24 26 23 21 25 26 19 28 25 27 26 23 27 22 28 25 25 27</span></span>
-<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a><span class="co">#&gt; [26] 25 23 24 25 24 25 27 22 21 22 19 20 22 26 20 27 25 25 24 26 25 23 30</span></span>
-<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, mon, <span class="st">&quot;relative&quot;</span>)</span>
-<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="co">#&gt;  [1] 0.8709677 0.8214286 0.7419355 0.8333333 0.7096774 0.8666667 0.8064516</span></span>
-<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a><span class="co">#&gt;  [8] 0.7741935 0.8666667 0.7419355 0.7000000 0.8064516 0.8387097 0.6785714</span></span>
-<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a><span class="co">#&gt; [15] 0.9032258 0.8333333 0.8709677 0.8666667 0.7419355 0.8709677 0.7333333</span></span>
-<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a><span class="co">#&gt; [22] 0.9032258 0.8333333 0.8064516 0.8709677 0.8928571 0.7419355 0.8000000</span></span>
-<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a><span class="co">#&gt; [29] 0.8064516 0.8000000 0.8064516 0.8709677 0.7333333 0.6774194 0.7333333</span></span>
-<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a><span class="co">#&gt; [36] 0.6129032 0.6451613 0.7857143 0.8387097 0.6666667 0.8709677 0.8333333</span></span>
-<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a><span class="co">#&gt; [43] 0.8064516 0.7741935 0.8666667 0.8064516 0.7666667 0.9677419</span></span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co"># 4 years of data on a `365_day` calendar, keep 80% of values</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">365</span> <span class="sc">*</span> <span class="dv">4</span></span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>cov <span class="ot">&lt;-</span> <span class="fl">0.8</span></span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a>offsets <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">0</span><span class="sc">:</span>(n<span class="dv">-1</span>), n <span class="sc">*</span> cov)</span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a></span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(<span class="st">&quot;days since 2020-01-01&quot;</span>, <span class="st">&quot;365_day&quot;</span>, offsets)</span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>cf</span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a><span class="co">#&gt; CF datum of origin:</span></span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a><span class="co">#&gt;   Origin  : 2020-01-01 00:00:00</span></span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a><span class="co">#&gt;   Calendar: 365_day</span></span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a><span class="co">#&gt; CF time series:</span></span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a><span class="co">#&gt;   Elements: [2020-01-01 .. 2023-12-31] (average of 1.250214 days between 1168 elements)</span></span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a><span class="co">#&gt;   Bounds  : not set</span></span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="co"># Note that there are about 1.25 days between observations</span></span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a>mon <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(cf, <span class="st">&quot;month&quot;</span>)</span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, mon, <span class="st">&quot;absolute&quot;</span>)</span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a><span class="co">#&gt;  [1] 23 22 28 23 30 23 24 28 21 22 21 19 27 25 23 22 28 24 22 20 24 25 27 23 24</span></span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a><span class="co">#&gt; [26] 23 29 24 29 21 22 26 26 25 25 22 24 23 27 25 27 25 24 23 25 27 23 25</span></span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, mon, <span class="st">&quot;relative&quot;</span>)</span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="co">#&gt;  [1] 0.7419355 0.7857143 0.9032258 0.7666667 0.9677419 0.7666667 0.7741935</span></span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a><span class="co">#&gt;  [8] 0.9032258 0.7000000 0.7096774 0.7000000 0.6129032 0.8709677 0.8928571</span></span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a><span class="co">#&gt; [15] 0.7419355 0.7333333 0.9032258 0.8000000 0.7096774 0.6451613 0.8000000</span></span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a><span class="co">#&gt; [22] 0.8064516 0.9000000 0.7419355 0.7741935 0.8214286 0.9354839 0.8000000</span></span>
+<span id="cb20-6"><a href="#cb20-6" tabindex="-1"></a><span class="co">#&gt; [29] 0.9354839 0.7000000 0.7096774 0.8387097 0.8666667 0.8064516 0.8333333</span></span>
+<span id="cb20-7"><a href="#cb20-7" tabindex="-1"></a><span class="co">#&gt; [36] 0.7096774 0.7741935 0.8214286 0.8709677 0.8333333 0.8709677 0.8333333</span></span>
+<span id="cb20-8"><a href="#cb20-8" tabindex="-1"></a><span class="co">#&gt; [43] 0.7741935 0.7419355 0.8333333 0.8709677 0.7666667 0.8064516</span></span></code></pre></div>
 <p>Keep in mind, though, that there are data sets where the time unit is
 lower than the intended resolution of the data. Since the CF conventions
 recommend that the coarsest time unit is “day”, many files with monthly
@@ -671,22 +720,22 @@ never occur, while 29 and 30 February occur in every year.</li>
 <p>Converting time series using these incompatible calendars to
 <code>Date</code>s is likely to produce problems. This is most
 pronounced for the <code>360_day</code> calendar:</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># Days in January and February</span></span>
-<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(<span class="st">&quot;days since 2023-01-01&quot;</span>, <span class="st">&quot;360_day&quot;</span>, <span class="dv">0</span><span class="sc">:</span><span class="dv">59</span>)</span>
-<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>cf_days <span class="ot">&lt;-</span> <span class="fu">CFtimestamp</span>(cf, <span class="st">&quot;date&quot;</span>)</span>
-<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a><span class="fu">as.Date</span>(cf_days)</span>
-<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;2023-01-01&quot; &quot;2023-01-02&quot; &quot;2023-01-03&quot; &quot;2023-01-04&quot; &quot;2023-01-05&quot;</span></span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a><span class="co">#&gt;  [6] &quot;2023-01-06&quot; &quot;2023-01-07&quot; &quot;2023-01-08&quot; &quot;2023-01-09&quot; &quot;2023-01-10&quot;</span></span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; [11] &quot;2023-01-11&quot; &quot;2023-01-12&quot; &quot;2023-01-13&quot; &quot;2023-01-14&quot; &quot;2023-01-15&quot;</span></span>
-<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; [16] &quot;2023-01-16&quot; &quot;2023-01-17&quot; &quot;2023-01-18&quot; &quot;2023-01-19&quot; &quot;2023-01-20&quot;</span></span>
-<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt; [21] &quot;2023-01-21&quot; &quot;2023-01-22&quot; &quot;2023-01-23&quot; &quot;2023-01-24&quot; &quot;2023-01-25&quot;</span></span>
-<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt; [26] &quot;2023-01-26&quot; &quot;2023-01-27&quot; &quot;2023-01-28&quot; &quot;2023-01-29&quot; &quot;2023-01-30&quot;</span></span>
-<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt; [31] &quot;2023-02-01&quot; &quot;2023-02-02&quot; &quot;2023-02-03&quot; &quot;2023-02-04&quot; &quot;2023-02-05&quot;</span></span>
-<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; [36] &quot;2023-02-06&quot; &quot;2023-02-07&quot; &quot;2023-02-08&quot; &quot;2023-02-09&quot; &quot;2023-02-10&quot;</span></span>
-<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt; [41] &quot;2023-02-11&quot; &quot;2023-02-12&quot; &quot;2023-02-13&quot; &quot;2023-02-14&quot; &quot;2023-02-15&quot;</span></span>
-<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt; [46] &quot;2023-02-16&quot; &quot;2023-02-17&quot; &quot;2023-02-18&quot; &quot;2023-02-19&quot; &quot;2023-02-20&quot;</span></span>
-<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co">#&gt; [51] &quot;2023-02-21&quot; &quot;2023-02-22&quot; &quot;2023-02-23&quot; &quot;2023-02-24&quot; &quot;2023-02-25&quot;</span></span>
-<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a><span class="co">#&gt; [56] &quot;2023-02-26&quot; &quot;2023-02-27&quot; &quot;2023-02-28&quot; NA           NA</span></span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="co"># Days in January and February</span></span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(<span class="st">&quot;days since 2023-01-01&quot;</span>, <span class="st">&quot;360_day&quot;</span>, <span class="dv">0</span><span class="sc">:</span><span class="dv">59</span>)</span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a>cf_days <span class="ot">&lt;-</span> <span class="fu">as_timestamp</span>(cf, <span class="st">&quot;date&quot;</span>)</span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a><span class="fu">as.Date</span>(cf_days)</span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;2023-01-01&quot; &quot;2023-01-02&quot; &quot;2023-01-03&quot; &quot;2023-01-04&quot; &quot;2023-01-05&quot;</span></span>
+<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a><span class="co">#&gt;  [6] &quot;2023-01-06&quot; &quot;2023-01-07&quot; &quot;2023-01-08&quot; &quot;2023-01-09&quot; &quot;2023-01-10&quot;</span></span>
+<span id="cb21-7"><a href="#cb21-7" tabindex="-1"></a><span class="co">#&gt; [11] &quot;2023-01-11&quot; &quot;2023-01-12&quot; &quot;2023-01-13&quot; &quot;2023-01-14&quot; &quot;2023-01-15&quot;</span></span>
+<span id="cb21-8"><a href="#cb21-8" tabindex="-1"></a><span class="co">#&gt; [16] &quot;2023-01-16&quot; &quot;2023-01-17&quot; &quot;2023-01-18&quot; &quot;2023-01-19&quot; &quot;2023-01-20&quot;</span></span>
+<span id="cb21-9"><a href="#cb21-9" tabindex="-1"></a><span class="co">#&gt; [21] &quot;2023-01-21&quot; &quot;2023-01-22&quot; &quot;2023-01-23&quot; &quot;2023-01-24&quot; &quot;2023-01-25&quot;</span></span>
+<span id="cb21-10"><a href="#cb21-10" tabindex="-1"></a><span class="co">#&gt; [26] &quot;2023-01-26&quot; &quot;2023-01-27&quot; &quot;2023-01-28&quot; &quot;2023-01-29&quot; &quot;2023-01-30&quot;</span></span>
+<span id="cb21-11"><a href="#cb21-11" tabindex="-1"></a><span class="co">#&gt; [31] &quot;2023-02-01&quot; &quot;2023-02-02&quot; &quot;2023-02-03&quot; &quot;2023-02-04&quot; &quot;2023-02-05&quot;</span></span>
+<span id="cb21-12"><a href="#cb21-12" tabindex="-1"></a><span class="co">#&gt; [36] &quot;2023-02-06&quot; &quot;2023-02-07&quot; &quot;2023-02-08&quot; &quot;2023-02-09&quot; &quot;2023-02-10&quot;</span></span>
+<span id="cb21-13"><a href="#cb21-13" tabindex="-1"></a><span class="co">#&gt; [41] &quot;2023-02-11&quot; &quot;2023-02-12&quot; &quot;2023-02-13&quot; &quot;2023-02-14&quot; &quot;2023-02-15&quot;</span></span>
+<span id="cb21-14"><a href="#cb21-14" tabindex="-1"></a><span class="co">#&gt; [46] &quot;2023-02-16&quot; &quot;2023-02-17&quot; &quot;2023-02-18&quot; &quot;2023-02-19&quot; &quot;2023-02-20&quot;</span></span>
+<span id="cb21-15"><a href="#cb21-15" tabindex="-1"></a><span class="co">#&gt; [51] &quot;2023-02-21&quot; &quot;2023-02-22&quot; &quot;2023-02-23&quot; &quot;2023-02-24&quot; &quot;2023-02-25&quot;</span></span>
+<span id="cb21-16"><a href="#cb21-16" tabindex="-1"></a><span class="co">#&gt; [56] &quot;2023-02-26&quot; &quot;2023-02-27&quot; &quot;2023-02-28&quot; NA           NA</span></span></code></pre></div>
 <p>31 January is missing from the vector of <code>Date</code>s because
 the <code>360_day</code> calendar does not include it and 29 and 30
 February are <code>NA</code>s because POSIXt rejects them. This will

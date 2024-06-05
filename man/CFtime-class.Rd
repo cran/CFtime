@@ -13,10 +13,17 @@ CF Metadata Conventions time representation
 \section{Slots}{
 
 \describe{
-\item{\code{datum}}{CFdatum. The atomic origin upon which the \code{offsets} are based.}
+\item{\code{datum}}{CFdatum. The origin upon which the \code{offsets} are based.}
 
 \item{\code{resolution}}{numeric. The average number of time units between offsets.}
 
 \item{\code{offsets}}{numeric. A vector of offsets from the datum.}
+
+\item{\code{bounds}}{Optional, the bounds for the offsets. If not set, it is the
+logical value \code{FALSE}. If set, it is the logical value \code{TRUE} if the bounds
+are regular with respect to the regularly spaced offsets (e.g. successive
+bounds are contiguous and at mid-points between the offsets); otherwise a
+\code{matrix} with columns for \code{offsets} and low values in the first row, high
+values in the second row.}
 }}
 

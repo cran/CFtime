@@ -10,8 +10,11 @@ library(ncdf4)
 
 ## -----------------------------------------------------------------------------
 # Setting up
-nc <- nc_open(list.files(path = system.file("extdata", package = "CFtime"), full.names = TRUE)[1])
-cf <- CFtime(nc$dim$time$units, nc$dim$time$calendar, nc$dim$time$vals)
+fn <- list.files(path = system.file("extdata", package = "CFtime"), full.names = TRUE)[1]
+nc <- nc_open(fn)
+cf <- CFtime(nc$dim$time$units, 
+             nc$dim$time$calendar, 
+             nc$dim$time$vals)
 
 # Create monthly factors for a baseline epoch and early, mid and late 21st century epochs
 baseline <- CFfactor(cf, epoch = 1991:2020)
@@ -26,7 +29,7 @@ str(future)
 pr <- ncvar_get(nc, "pr", collapse_degen = FALSE) * 86400
 
 # Assign dimnames(), optional.
-dimnames(pr) <- list(nc$dim$lon$vals, nc$dim$lat$vals, CFtimestamp(cf))
+dimnames(pr) <- list(nc$dim$lon$vals, nc$dim$lat$vals, as_timestamp(cf))
 
 # Get a global attribute from the file
 experiment <- ncatt_get(nc, "")$experiment_id

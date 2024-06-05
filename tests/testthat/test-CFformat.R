@@ -1,23 +1,39 @@
 test_that("Creating timestamps", {
-  expect_error(CFtimestamp("1-2-3"))          # No CFtime as first argument
+  expect_error(as_timestamp("1-2-3"))          # No CFtime as first argument
 
   cf <- CFtime("hours since 2001-01-01", "365_day")
-  expect_null(CFtimestamp(cf)) # No offsets
+  expect_null(as_timestamp(cf)) # No offsets
   cf <- cf + 0L:2399L
-  expect_error(CFtimestamp(cf, "d"))          # Wrong format specifier
-  expect_error(CFtimestamp(cf, asPOSIX = T))  # No POSIXt on a non-standard calendar
-  expect_equal(length(CFtimestamp(cf)), 2400L)
+  expect_error(as_timestamp(cf, "d"))          # Wrong format specifier
+  expect_error(as_timestamp(cf, asPOSIX = T))  # No POSIXt on a non-standard calendar
+  expect_equal(length(as_timestamp(cf)), 2400L)
 
   cf <- CFtime("days since 2001-01-01", "standard", 0L:364L)
-  expect_equal(length(CFtimestamp(cf)), 365L)
-  expect_equal(nchar(CFtimestamp(cf)[1]), 10L) # date string
-  expect_equal(length(CFtimestamp(cf, "date", TRUE)), 365L)
-  expect_equal(length(CFtimestamp(cf, "timestamp", TRUE)), 365L)
+  expect_equal(length(as_timestamp(cf)), 365L)
+  expect_equal(nchar(as_timestamp(cf)[1]), 10L) # date string
+  expect_equal(length(as_timestamp(cf, "date", TRUE)), 365L)
+  expect_equal(length(as_timestamp(cf, "timestamp", TRUE)), 365L)
+})
+
+test_that("Using format()", {
+  cf <- CFtime("days since 2001-01-01 18:10:30-04", "365_day", 0:364)
+
+  expect_equal(format(cf)[1], "2001-01-01 18:10:30")      # format parameter missing
+  expect_error(format(cf, 123)) # format parameter must be character
+  expect_error(format(cf, c("doesn't", "work", "either")))
+
+  expect_equal(format(cf, "Timestamp is: %%%F%%")[1], "Timestamp is: %2001-01-01%")
+  expect_equal(format(cf, "Timestamp is: %R")[1], "Timestamp is: 18:10")
+  expect_equal(format(cf, "%T%z")[1], "18:10:30-0400")
+  #expect_equal(format(cf, "%b")[c(1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335)], month.abb)  # en_EN only
+  #expect_equal(format(cf, "%B")[c(1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335)], month.name) #
+  expect_equal(format(cf, "%Od-%e-%I%p")[5], "05- 5-06PM")
+
 })
 
 test_that("CFfactor testing", {
   # No offsets
-  cf <- CFtime("days since 2001-01-01", "365_day")
+  cf <- CFtime("days since 2000-01-01", "365_day")
   expect_error(CFfactor())
   expect_error(CFfactor(cf))
   expect_error(CFfactor(cf, "zxcv"))
@@ -30,24 +46,31 @@ test_that("CFfactor testing", {
   leap_dekad_days <- c(10, 10, 11, 10, 10, 9, 10, 10, 11, 10, 10, 10, 10, 10, 11, 10, 10, 10, 10, 10, 11, 10, 10, 11, 10, 10, 10, 10, 10, 11, 10, 10, 10, 10, 10, 11)
 
   # Few offsets
-  cf <- cf + 0L:4L
+  cf <- cf + 365L:370L
   expect_error(CFfactor(cf))
 
-  cf <- cf + 5L:7299L # 20 years of offsets
+  cf <- cf + 371L:7664L # 20 years of offsets
 
   # Regular factors for all available periods
-  first <- c("2001", "2001-DJF", "2001-01", "2001D01", "2001-01-01")
-  last <-  c("2020", "2021-DJF", "2020-12", "2020D36", "2020-12-31")
-  for (p in 1:5) {
+  np <- c(20, 81, 80, 240, 720, 7300)
+  first <- c("2001", "2001S1", "2001Q1", "2001-01", "2001D01", "2001-01-01")
+  last <-  c("2020", "2021S1", "2020Q4", "2020-12", "2020D36", "2020-12-31")
+  for (p in 1:6) {
     f <- CFfactor(cf, CFt$factor_periods[p])
     expect_equal(as.character(f)[1L], first[p])
     expect_equal(as.character(f)[7300L], last[p])
+    newcf <- attr(f, "CFtime")
+    bnds <- bounds(newcf)
+    expect_equal(definition(cf), definition(newcf))
+    expect_true(is.matrix(bnds))
+    expect_type(bnds, "double")
+    expect_equal(dim(bnds), c(2, np[p]))
   }
 
   # Epoch factors for all available periods
   epochs <- list(first = 2001L, double = 2002L:2003L, final3 = 2018L:2020L, outside = 2022L)
-  lvls <- c(1L, 4L, 12L, 36L, 365L)
-  for (p in 1:5) { # year, season, month, dekad, day
+  lvls <- c(1L, 4L, 4L, 12L, 36L, 365L)
+  for (p in 1:6) { # year, season, quarter, month, dekad, day
     f <- CFfactor(cf, CFt$factor_periods[p], epochs)
     expect_type(f, "list")
     expect_equal(length(f), 4L)
@@ -60,7 +83,7 @@ test_that("CFfactor testing", {
       expect_equal(length(levels(f$double)), 2L)
       expect_equal(length(levels(f$final3)), 3L)
       expect_equal(length(levels(f$outside)), 0L)
-    } else if (p == 2L) {
+    } else if (p %in% c(2L, 3L)) {
       expect_equal(length(levels(f$first)), 4L)
       expect_equal(length(levels(f$double)), 4L)
       expect_equal(length(levels(f$final3)), 4L)
@@ -74,8 +97,7 @@ test_that("CFfactor testing", {
   }
 
   # Single epoch value for all available periods
-  lvls <- c(1L, 4L, 12L, 36L, 365L)
-  for (p in 1:5) { # year, season, month, dekad, day
+  for (p in 1:6) { # year, season, quarter, month, dekad, day
     f <- CFfactor(cf, CFt$factor_periods[p], 2002L)
     expect_s3_class(f, "factor")
     expect_equal(length(f), 7300L)
@@ -107,6 +129,16 @@ test_that("CFfactor testing", {
   x <- CFfactor_coverage(cf, f, "relative")
   expect_equal(x[1L] + x[81L], 1L)
   expect_true(all(x[2L:80L] == 1L))
+
+  f <- CFfactor(cf, "quarter")
+  expect_equal(sum(CFfactor_units(cf, f)), 7300L)
+  expect_true(all(CFfactor_units(cf, f) %in% 90L:92L))
+  x <- CFfactor_coverage(cf, f, "absolute")
+  expect_equal(x[1L], 90L)
+  expect_equal(x[80L], 92L)
+  expect_true(all(x %in% 90L:92L))
+  x <- CFfactor_coverage(cf, f, "relative")
+  expect_true(all(x == 1L))
 
   f <- CFfactor(cf, "month")
   expect_equal(sum(CFfactor_units(cf, f)), 7300L)
@@ -222,4 +254,25 @@ test_that("CFfactor testing", {
   expect_equal(sum(x), n * cov)
   x <- CFfactor_coverage(cf, f, "relative")
   expect_true((cov - 0.01) < mean(x) && mean(x) < (cov + 0.01))
+})
+
+test_that("cut() works", {
+  cf <- CFtime("days since 2020-01-01", "360_day", 0:719)
+  expect_error(cut("sfg"))
+  expect_error(cut(cf))
+  expect_error(cut(cf, breaks = 5))
+  expect_error(cut(cf, ""))
+  expect_error(cut(cf, "blah"))
+  expect_error(suppressWarnings(cut(cf, c("1900-01-01", "2020-04-03")))) # pre-datum break
+
+  f <- cut(cf, "quarter")
+  expect_equal(nlevels(f), 8)
+  expect_equal(levels(f), c("2020Q1", "2020Q2", "2020Q3", "2020Q4", "2021Q1", "2021Q2", "2021Q3", "2021Q4"))
+
+  f <- cut(cf, c("2021-01-01", "2020-04-03")) # out of order
+  expect_s3_class(f, "factor")
+  expect_equal(levels(f), "2020-04-03")
+
+  f <- cut(cf, c("2020-01-01", "2020-06-17", "2021-01-01", "2021-04-12", "2401-01-01"))
+  expect_equal(levels(f), c("2020-01-01", "2020-06-17", "2021-01-01", "2021-04-12"))
 })

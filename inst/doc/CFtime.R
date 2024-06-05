@@ -14,7 +14,7 @@ as.Date("1949-12-01") + 43289
 
 # CFtime calculation on a "360_day" calendar - CORRECT
 # See below examples for details on the two functions
-CFtimestamp(CFtime("days since 1949-12-01", "360_day", 43289))
+as_timestamp(CFtime("days since 1949-12-01", "360_day", 43289))
 
 ## -----------------------------------------------------------------------------
 # Create a CF time object from a definition string, a calendar and some offsets
@@ -24,7 +24,8 @@ cf
 ## -----------------------------------------------------------------------------
 # Opening a data file that is included with the package and showing some attributes.
 # Usually you would `list.files()` on a directory of your choice.
-nc <- nc_open(list.files(path = system.file("extdata", package = "CFtime"), full.names = TRUE)[1])
+fn <- list.files(path = system.file("extdata", package = "CFtime"), full.names = TRUE)[1]
+nc <- nc_open(fn)
 attrs <- ncatt_get(nc, "")
 attrs$title
 
@@ -32,22 +33,26 @@ attrs$title
 attrs$Conventions
 
 # Create the CFtime instance from the metadata in the file.
-cf <- CFtime(nc$dim$time$units, nc$dim$time$calendar, nc$dim$time$vals)
+cf <- CFtime(nc$dim$time$units, 
+             nc$dim$time$calendar, 
+             nc$dim$time$vals)
 cf
 
 ## -----------------------------------------------------------------------------
 library(RNetCDF)
-nc <- open.nc(list.files(path = system.file("extdata", package = "CFtime"), full.names = TRUE)[1])
+nc <- open.nc(fn)
 att.get.nc(nc, -1, "Conventions")
-cf <- CFtime(att.get.nc(nc, "time", "units"), att.get.nc(nc, "time", "calendar"), var.get.nc(nc, "time"))
+cf <- CFtime(att.get.nc(nc, "time", "units"), 
+             att.get.nc(nc, "time", "calendar"), 
+             var.get.nc(nc, "time"))
 cf
 
 ## -----------------------------------------------------------------------------
-dates <- CFtimestamp(cf, format = "date")
+dates <- as_timestamp(cf, format = "date")
 dates[1:10]
 
 ## -----------------------------------------------------------------------------
-CFrange(cf)
+range(cf)
 
 ## -----------------------------------------------------------------------------
 # Create a dekad factor for the whole `cf` time series that was created above
@@ -60,8 +65,12 @@ future <- CFfactor(cf, epoch = list(early = 2021:2040, mid = 2041:2060, late = 2
 str(future)
 
 ## -----------------------------------------------------------------------------
+  new_time <- attr(f_k, "CFtime")
+  new_time
+
+## -----------------------------------------------------------------------------
 # Is the time series complete?
-CFcomplete(cf)
+is_complete(cf)
 
 # How many time units fit in a factor level?
 CFfactor_units(cf, baseline)
@@ -87,6 +96,6 @@ CFfactor_coverage(cf, mon, "relative")
 ## -----------------------------------------------------------------------------
 # Days in January and February
 cf <- CFtime("days since 2023-01-01", "360_day", 0:59)
-cf_days <- CFtimestamp(cf, "date")
+cf_days <- as_timestamp(cf, "date")
 as.Date(cf_days)
 

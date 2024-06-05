@@ -1,6 +1,42 @@
-# CFtime 1.3.0
+# CFtime 1.4.0
 
-Changes since release 1.2.0:
+* Bounds that define intervals around offsets can be associated with a CFtime
+instance and retrieved as raw offset values or as formatted timestamps.
+* Methods that subset a CF time series (e.g. `CFfactor()`, `cut()`, `slab()`)
+now have an attribute "CFtime" (among possible others) that describes the "time"
+dimension of the analysis result applying the subset. In other words, if CFtime 
+instance 'Acf' describes the temporal dimension of data set 'A' and a factor 'Af'
+is generated from 'Acf', then `Bcf <- attr(Af, "CFtime")` describes the temporal
+dimension of the result of, say, `B <- apply(A, 1:2, tapply, Af, FUN)`.
+* New `indexOf()` method added that returns the indices of supplied timestamps
+in a CFtime instance, optionally with a fractional part. This can be used to
+extract specific time steps, or to interpolate between time steps using the
+fractional part, from the time dimension of the data set associated with the
+CFtime instance. A vector of indices (e.g. referring to slices of the data set)
+can also be supplied, in which case valid indices are returned, with the new
+CFtime instance.
+* New `cut()` method added to generate a factor, similar to `cut.POSIXt()` but with
+some differences in the arguments.
+* `CFfactor()` now supports a period "quarter", for calendar quarters.
+* `format()` method added that generates a character vector of timestamps for the
+offsets in a CFtime instance. The format is specified using the flags used in
+`strptime()`, with some limitations. In particular, locale-specific formatting is
+limited to month names and no weekday information can be generated. The `range()`
+method has a new "format" parameter to support the same functionality and timestamps
+can also be generated for the extremes of the bounds, if set.
+* `as.character()` and `length()` methods added that return a vector of timestamps 
+or the number of offsets in a CFtime instance, respectively.
+* Several functions have been renamed (most notably `CFtimestamp()` to
+`as.timestamp()`, `CFcomplete()` to `is_complete()`, `CFrange()` to the standard 
+generic method `range()`, and `CFsubset()` to `slab()`) to be more consistent 
+with the R universe. The original functions are now flagged as being deprecated. 
+Some datum functions (deep down where regular mortals do not dwell) have been 
+deleted.
+* Time zone designator "UTC" accepted when parsing timestamps to offsets.
+* Minor code fixes, see GitHub commits.
+* Documentation updated, with description of new functions.
+
+# CFtime 1.3.0
 
 * Two CFtime instances can be added if they have compatible calendars and units.
 The earlier origin is preserved in the result and offsets from the later instance
@@ -17,8 +53,6 @@ timestamps is parsed and found to have different time zones, a warning is genera
 * Documentation updated, with description of new functions.
 
 # CFtime 1.2.0
-
-Changes since release 1.1.0:
 
 * Datum units "years" and "months" added. While these units are discouraged by
 the CF Metadata Conventions due to their problematic definition, there are quite
@@ -43,8 +77,6 @@ previous behaviour so the API is not broken.
 * Assorted minor code fixes, see GitHub commits.
 
 # CFtime 1.1.0
-
-Changes since release 1.0.0:
 
 * CFtime() can now also be invoked with a vector of character timestamps as offsets, or
 with a single timestamp to create a complete time series from the datum to the
