@@ -380,13 +380,13 @@ setGeneric("indexOf", function(x, y, ...) standardGeneric("indexOf"), signature 
 #' elements of the time series - this can lead to surprising results when time
 #' series elements are positioned in the middle of an interval (as the CF
 #' Metadata Conventions instruct us to "reasonably assume"): a time series of
-#' days in January would be encoded in a NetCDF file as
+#' days in January would be encoded in a netCDF file as
 #' `c("2024-01-01 12:00:00", "2024-01-02 12:00:00", "2024-01-03 12:00:00", ...)`
 #' so `x <- c("2024-01-01", "2024-01-02", "2024-01-03")` would result in
 #' `(NA, 1, 2)` (or `(NA, 1.5, 2.5)` with `method = "linear"`) because the date
 #' values in `x` are at midnight. This situation is easily avoided by ensuring
 #' that `y` has bounds set (use `bounds(y) <- TRUE` as a proximate solution if
-#' bounds are not stored in the NetCDF file). See the Examples.
+#' bounds are not stored in the netCDF file). See the Examples.
 #'
 #' If bounds are set, the indices are taken from those bounds. Returned indices
 #' may fall in between bounds if the latter are not contiguous, with the
@@ -396,8 +396,9 @@ setGeneric("indexOf", function(x, y, ...) standardGeneric("indexOf"), signature 
 #' will be returned as `NA`.
 #'
 #' `x` can also be a numeric vector of index values, in which case the valid
-#' values in `x` are returned. Negative values are excluded and then the
-#' remainder returned. Positive and negative values may not be mixed. This has
+#' values in `x` are returned. If negative values are passed, the positive
+#' counterparts will be excluded and then the remainder returned. Positive and
+#' negative values may not be mixed. Using a numeric vector has
 #' the side effect that the result has the attribute "CFtime" describing the
 #' temporal dimension of the slice. If index values outside of the range of `y`
 #' (`1:length(y)`) are provided, an error will be thrown.
@@ -410,7 +411,8 @@ setGeneric("indexOf", function(x, y, ...) standardGeneric("indexOf"), signature 
 #'   `"linear"`, return the index value with any fractional value.
 #'
 #' @returns A numeric vector giving indices into the "time" dimension of the
-#'   dataset associated with `y` for the values of `x`. Attribute "CFtime"
+#'   dataset associated with `y` for the values of `x`. If there is at least 1
+#'   valid index, then attribute "CFtime"
 #'   contains an instance of CFtime that describes the dimension of filtering
 #'   the dataset associated with `y` with the result of this function, excluding
 #'   any `NA`, `0` and `.Machine$integer.max` values.
@@ -456,7 +458,14 @@ setMethod("indexOf", c("ANY", "CFtime"), function(x, y, method = "constant") {
     intv[which(intv == length(vals))] <- .Machine$integer.max
   }
 
-  attr(intv, "CFtime") <- CFtime(definition(y), calendar(y), xoff[!is.na(intv)])
+  valid <- which(!is.na(intv) & intv > 0 & intv < .Machine$integer.max)
+  if (any(valid)) {
+    cf <- CFtime(definition(y), calendar(y), xoff[valid])
+    yb <- bounds(y)
+    if (!is.null(yb))
+      bounds(cf) <- yb[, intv[valid]]
+    attr(intv, "CFtime") <- cf
+  }
   intv
 })
 
@@ -530,6 +539,8 @@ is_complete <- function(x) {
 #'   extremes of the time period of interest. The timestamps must be in
 #'   increasing order. The timestamps need not fall in the range of the time
 #'   steps in the CFtime stance.
+#' @param rightmost.closed Is the larger extreme value included in the result?
+#'   Default is `FALSE`.
 #'
 #' @returns A logical vector with a length equal to the number of time steps in
 #'   `x` with values `TRUE` for those time steps that fall between the two
@@ -541,12 +552,12 @@ is_complete <- function(x) {
 #' @examples
 #' cf <- CFtime("hours since 2023-01-01 00:00:00", "standard", 0:23)
 #' slab(cf, c("2022-12-01", "2023-01-01 03:00"))
-slab <- function(x, extremes) {
+slab <- function(x, extremes, rightmost.closed = FALSE) {
   if (!methods::is(x, "CFtime")) stop("First argument must be an instance of CFtime")
   if (!is.character(extremes) || length(extremes) != 2L)
     stop("Second argument must be a character vector of two timestamps")
   if (extremes[2L] < extremes[1L]) extremes <- c(extremes[2L], extremes[1L])
-  .ts_slab(x, extremes)
+  .ts_slab(x, extremes, rightmost.closed)
 }
 
 #' Equivalence of CFtime objects
@@ -733,6 +744,7 @@ setMethod("+", c("CFtime", "numeric"), function(e1, e2) {
 #' @param extremes character. Vector of two timestamps that represent the
 #'   extremes of the time period of interest. The timestamps must be in
 #'   increasing order.
+#' @param closed Is the right side closed, i.e. included in the result?
 #'
 #' @returns A logical vector with a length equal to the number of time steps in
 #'   `x` with values `TRUE` for those time steps that fall between the two
@@ -744,7 +756,7 @@ setMethod("+", c("CFtime", "numeric"), function(e1, e2) {
 #'   corresponding to the time steps falling between the two extremes. If there
 #'   are no values between the extremes, the attribute is `NULL`.
 #' @noRd
-.ts_slab <- function(x, extremes) {
+.ts_slab <- function(x, extremes, closed) {
   ext <- .parse_timestamp(x@datum, extremes)$offset
   if (is.na(ext[1L])) ext[1L] <- 0
   off <- x@offsets
@@ -752,7 +764,8 @@ setMethod("+", c("CFtime", "numeric"), function(e1, e2) {
     out <- rep(FALSE, length(off))
     attr(out, "CFtime") <- NULL
   } else {
-    out <- off >= ext[1L] & off < ext[2L]
+    out <- if (closed) off >= ext[1L] & off <= ext[2L]
+                  else off >= ext[1L] & off < ext[2L]
     cf <- CFtime(x@datum@definition, x@datum@calendar, off[out])
     xb <- bounds(x)
     if (!is.null(xb))

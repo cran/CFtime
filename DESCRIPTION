@@ -1,6 +1,6 @@
 Package: CFtime
 Title: Using CF-Compliant Calendars with Climate Projection Data
-Version: 1.4.0
+Version: 1.4.1
 Authors@R: 
     person("Patrick", "Van Laake", , "patrick@vanlaake.net", role = c("aut", "cre", "cph"))
 Description: Support for all calendars as specified in the Climate and Forecast 
@@ -14,7 +14,7 @@ Description: Support for all calendars as specified in the Climate and Forecast
     Conventions document available at <https://cfconventions.org/Data/cf-conventions/cf-conventions-1.11/cf-conventions.html#time-coordinate>.
 License: MIT + file LICENSE
 Encoding: UTF-8
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2
 Imports: methods, utils
 Suggests: knitr, rmarkdown, ncdf4, RNetCDF, testthat (>= 3.0.0),
         stringr
@@ -23,8 +23,8 @@ BugReports: https://github.com/pvanlaake/CFtime/issues
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2024-06-05 15:19:27 UTC; patrickvanlaake
+Packaged: 2024-09-15 18:37:49 UTC; patrickvanlaake
 Author: Patrick Van Laake [aut, cre, cph]
 Maintainer: Patrick Van Laake <patrick@vanlaake.net>
 Repository: CRAN
-Date/Publication: 2024-06-05 17:10:07 UTC
+Date/Publication: 2024-09-15 19:00:02 UTC
