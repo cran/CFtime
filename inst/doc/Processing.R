@@ -16,14 +16,14 @@ cf <- CFtime(nc$dim$time$units,
              nc$dim$time$calendar, 
              nc$dim$time$vals)
 
-# Create monthly factors for a baseline epoch and early, mid and late 21st century epochs
-baseline <- CFfactor(cf, epoch = 1991:2020)
-future <- CFfactor(cf, epoch = list(early = 2021:2040, mid = 2041:2060, late = 2061:2080))
+# Create monthly factors for a baseline era and early, mid and late 21st century eras
+baseline <- CFfactor(cf, era = 1991:2020)
+future <- CFfactor(cf, era = list(early = 2021:2040, mid = 2041:2060, late = 2061:2080))
 str(baseline)
 str(future)
 
 ## -----------------------------------------------------------------------------
-# Read the data from the NetCDF file.
+# Read the data from the netCDF file.
 # Keep degenerate dimensions so that we have a predictable data structure: 3-dimensional array.
 # Converts units of kg m-2 s-1 to mm/day.
 pr <- ncvar_get(nc, "pr", collapse_degen = FALSE) * 86400
@@ -37,11 +37,11 @@ experiment <- ncatt_get(nc, "")$experiment_id
 nc_close(nc)
 
 # Calculate the daily average precipitation per month for the baseline period
-# and the three future epochs.
+# and the three future eras.
 pr_base <- apply(pr, 1:2, tapply, baseline, mean)                         # an array
 pr_future <- lapply(future, function(f) apply(pr, 1:2, tapply, f, mean))  # a list of arrays
 
-# Calculate the precipitation anomalies for the future epochs against the baseline.
+# Calculate the precipitation anomalies for the future eras against the baseline.
 # Working with daily averages per month so we can simply subtract and then multiply by days 
 # per month for each of the factor levels using the CF calendar.
 ano <- mapply(function(pr, f) {(pr - pr_base) * CFfactor_units(cf, f)}, pr_future, future, SIMPLIFY = FALSE)
@@ -66,23 +66,23 @@ ano <- lapply(lf, function(fn) {
   pr <- ncvar_get(nc, "pr", collapse_degen = FALSE) * 86400
   nc_close(nc)
 
-  baseline <- CFfactor(cf, epoch = 1991:2020)
+  baseline <- CFfactor(cf, era = 1991:2020)
   pr_base <- apply(pr, 1:2, tapply, baseline, mean)
-  future <- CFfactor(cf, epoch = list(early = 2021:2040, mid = 2041:2060, late = 2061:2080))
+  future <- CFfactor(cf, era = list(early = 2021:2040, mid = 2041:2060, late = 2061:2080))
   pr_future <- lapply(future, function(f) apply(pr, 1:2, tapply, f, mean))
   mapply(function(pr, f) {(pr - pr_base) * CFfactor_units(cf, f)}, pr_future, future, SIMPLIFY = FALSE)
 })
 
-# Epoch names
-epochs <- c("early", "mid", "late")
-dim(epochs) <- 3
+# Era names
+eras <- c("early", "mid", "late")
+dim(eras) <- 3
 
-# Build the ensemble for each epoch
-# For each epoch, grab the data for each of the ensemble members, simplify to an array
+# Build the ensemble for each era
+# For each era, grab the data for each of the ensemble members, simplify to an array
 # and take the mean per row (months, in this case)
-ensemble <- apply(epochs, 1, function(e) {
+ensemble <- apply(eras, 1, function(e) {
   rowMeans(sapply(ano, function(a) a[[e]], simplify = T))})
-colnames(ensemble) <- epochs
+colnames(ensemble) <- eras
 rownames(ensemble) <- rownames(ano[[1]][[1]])
 ensemble
 

@@ -2,16 +2,18 @@
  - update documentation: README, vignettes, package doc
  - update hyperlinks (to e.g. latest CF version)
 
-# 1.5
+# 1.6
  - serialize() for writing
  - Climatology
- - `standard` calendar to use mixed gregorian/julian calendars
  - Paleocalendar
  - equidistant by element and calendar
- - create CFtime from POSIXct or Date, reference to 1970-01-01 00:00:00
 
 # Further away
+ - Developer vignette
  - cut() needs to support "2 days" etc
  - filter() like tidyverse -> CFsubset
  - CFfactor() can use epochs with lower resolution such as [year, month] for 3-hr data: e.g. daily avg per month per epoch
  - Epoch factor periods should have climatological CFtime
+
+
+ - Make data set on GitHub for extra testing etc

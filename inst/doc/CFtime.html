@@ -48,8 +48,9 @@ overflow: visible;
 }
 </style>
 <style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
 pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -357,39 +358,64 @@ across the various data sets.</p>
 wide range of modeling requirements and that means that some of the
 areas covered by the standards are more complex than might be assumed.
 One of those areas is the temporal dimension of the data sets. The CF
-Metadata Conventions supports no less than nine different calendar
-definitions, that, upon analysis, fall into five distinct calendars
-(from the perspective of computation of climate projections):</p>
+Metadata Conventions supports no less than 11 different calendar
+definitions, that, upon analysis, fall into 8 distinct calendars (from
+the perspective of computation of climate projections):</p>
 <ul>
-<li><code>standard</code> or <code>gregorian</code>: The international
-civil calendar that is in common use in many countries around the world,
+<li><code>standard</code> (or <code>gregorian</code>): The Gregorian
+calendar that is in common use in many countries around the world,
 adopted by edict of Pope Gregory XIII in 1582 and in effect from 15
-October of that year. The <code>proleptic_gregorian</code> calendar is
-the same as the <code>gregorian</code> calendar, but with validity
-extended to periods prior to <code>1582-10-15</code>.</li>
+October of that year. The earliest valid time in this calendar is
+0001-01-01 00:00:00 (1 January of year 1) as year 0 does not exist and
+the CF Metadata Conventions require the year to be positive, but noting
+that a Julian calendar is used in periods before the Gregorian calendar
+was introduced.</li>
+<li><code>proleptic_gregorian</code>: This is the Gregorian calendar
+with validity extended to periods prior to <code>1582-10-15</code>,
+including a year 0 and negative years. This calendar is being used in
+most OSes and is what is being used by R.</li>
+<li><code>tai</code>: International Atomic Time, a global standard for
+linear time: it counts seconds since its start at 1958-01-01 00:00:00.
+For presentation it uses the Gregorian calendar. Timestamps prior to its
+start are not allowed.</li>
+<li><code>utc</code>: Coordinated Universal Time, the standard for civil
+timekeeping all over the world. It is based on International Atomic Time
+but it uses occasional leap seconds to remain synchronous with Earth’s
+rotation around the Sun; at the end of 2024 it is 37 seconds behind
+<code>tai</code>. It uses the Gregorian calendar with a start at
+1972-01-01 00:00:00; earlier timestamps are not allowed. Future
+timestamps are also not allowed because the insertion of leap seconds is
+unpredictable. Most computer clocks use UTC.</li>
 <li><code>julian</code>: Adopted in the year 45 BCE, every fourth year
-is a leap year. Originally, the julian calendar did not have a
+is a leap year. Originally, the Julian calendar did not have a
 monotonically increasing year assigned to it and there are indeed
-several julian calendars in use around the world today with different
+several Julian calendars in use around the world today with different
 years assigned to them. Common interpretation is currently that the year
-is the same as that of the standard calendar. The julian calendar is
-currently 13 days behind the gregorian calendar.</li>
-<li><code>365_day</code> or <code>noleap</code>: No years have a leap
-day.</li>
-<li><code>366_day</code> or <code>all_leap</code>: All years have a leap
-day.</li>
-<li><code>360_day</code>: Every year has 12 months of 30 days each.</li>
+is the same as that of the Gregorian calendar. The Julian calendar is
+currently 13 days behind the Gregorian calendar. As with the standard
+calendar, the earliest valid time in this calendar is 0001-01-01
+00:00:00.</li>
+<li><code>365_day</code> or <code>noleap</code>: “Model time” in which
+no years have a leap day. Negative years are allowed and year 0
+exists.</li>
+<li><code>366_day</code> or <code>all_leap</code>: “Model time” in which
+all years have a leap day. Negative years are allowed and year 0
+exists.</li>
+<li><code>360_day</code>: “Model time” in which every year has 12 months
+of 30 days each. Negative years are allowed and year 0 exists.</li>
 </ul>
-<p>The three latter calendars are specific to the CF Metadata
-Conventions to reduce computational complexities of working with dates.
-These three, and the julian calendar, are not compliant with the
-standard <code>POSIXt</code> date/time facilities in <code>R</code> and
-using standard date/time procedures would quickly lead to problems. In
-the below code snippet, the date of <code>1949-12-01</code> is the
-<em>datum</em> from which other dates are calculated. When adding 43,289
-days to this <em>datum</em> for a data set that uses the
+<p>The three latter calendars of model time are specific to the CF
+Metadata Conventions to reduce computational complexities of working
+with dates. None of the 8 calendars are compliant with the standard
+<code>POSIXt</code> date/time facilities in <code>R</code> and using
+standard date/time functions would quickly lead to problems. See the
+section on “CFtime and POSIXt”, below, for a detailed description of the
+discrepancies between the CF calendars and POSIXt.</p>
+<p>In the below code snippet, the date of <code>1949-12-01</code> is the
+<em>origin</em> from which other dates are calculated. When adding
+43,289 days to this origin for a data set that uses the
 <code>360_day</code> calendar, that should yield a date some 120 years
-after the <em>datum</em>:</p>
+after the origin:</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># POSIXt calculations on a standard calendar - INCORRECT</span></span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">as.Date</span>(<span class="st">&quot;1949-12-01&quot;</span>) <span class="sc">+</span> <span class="dv">43289</span></span>
 <span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;2068-06-08&quot;</span></span>
@@ -401,7 +427,7 @@ after the <em>datum</em>:</p>
 <p>Using standard <code>POSIXt</code> calculations gives a result that
 is about 21 months off from the correct date - obviously an undesirable
 situation. This example is far from artificial: <code>1949-12-01</code>
-is the datum for all CORDEX data, covering the period 1951 - 2005 for
+is the origin for all CORDEX data, covering the period 1950 - 2005 for
 historical experiments and the period 2006 - 2100 for RCP experiments
 (with some deviation between data sets), and several models used in the
 CORDEX set use the <code>360_day</code> calendar. The
@@ -419,47 +445,58 @@ further processing of the data.</p>
 <h5>Time zones</h5>
 <p>The character of CF time series - a number of numerical offsets from
 a base date - implies that there should only be a single time zone
-associated with the time series. The time zone offset from UTC is stored
-in the datum and can be retrieved with the <code>timezone()</code>
-function. If a vector of character timestamps with time zone information
-is parsed with the <code>CFparse()</code> function and the time zones
-are found to be different from the datum time zone, a warning message is
-generated but the timestamp is interpreted as being in the datum time
-zone. No correction of timestamp to datum time zone is performed.</p>
+associated with the time series, and then only for the
+<code>standard</code> and <code>proleptic_gregorian</code> calendars.
+For the other calendars a time zone can be set but it will have no
+effect. Daylight savings time information is never considered by
+<code>CFtime</code> so the user should take care to avoid entering times
+with DST.</p>
+<p>The time zone offset from UTC is stored in the <code>CFTime</code>
+instance and can be retrieved with the <code>timezone()</code> function.
+If a vector of character timestamps with time zone information is parsed
+with the <code>CFparse()</code> function and the time zones are found to
+be different from the <code>CFTime</code> time zone, a warning message
+is generated but the timestamp is interpreted as being in the
+<code>CFTime</code> time zone. No correction of timestamp to
+<code>CFTime</code> time zone is performed.</p>
+<p>The concept of time zones does not apply to the <code>utc</code> and
+<code>tai</code> calendars as they represent universal time, i.e. the
+indicated time is valid all over the globe. Timestamps passed to these
+calendars should not have a time zone indicated, but if there are,
+anything other than a 0 offset will generate an error.</p>
 </div>
 </div>
 <div id="using-cftime-to-deal-with-calendars" class="section level2">
 <h2>Using CFtime to deal with calendars</h2>
 <p>Data sets that are compliant with the CF Metadata Conventions always
-include a <em>datum</em>, a specific point in time in reference to a
+include a <em>origin</em>, a specific point in time in reference to a
 specified <em>calendar</em>, from which other points in time are
 calculated by adding a specified <em>offset</em> of a certain
 <em>unit</em>. This approach is encapsulated in the <code>CFtime</code>
-package by the S4 class <code>CFtime</code>.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Create a CF time object from a definition string, a calendar and some offsets</span></span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(<span class="st">&quot;days since 1949-12-01&quot;</span>, <span class="st">&quot;360_day&quot;</span>, <span class="dv">19830</span><span class="sc">:</span><span class="dv">90029</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>cf</span>
-<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt; CF datum of origin:</span></span>
-<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1949-12-01 00:00:00</span></span>
-<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
-<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt;   Calendar: 360_day</span></span>
-<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt; CF time series:</span></span>
-<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt;   Elements: [2005-01-01 .. 2199-12-30] (average of 1.000000 days between 70200 elements)</span></span>
-<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a><span class="co">#&gt;   Bounds  : not set</span></span></code></pre></div>
-<p>The <code>CFtime()</code> function takes a <em>datum</em> description
-(which is actually a unit - “days” - in reference to a datum -
-“1949-12-01”), a calendar description, and a vector of <em>offsets</em>
-from that datum. Once a <code>CFtime</code> instance is created its
-datum and calendar cannot be changed anymore. Offsets may be added.</p>
+package by the R6 class <code>CFTime</code>.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># Create a CFTime object from a definition string, a calendar and some offsets</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>(t <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(<span class="st">&quot;days since 1949-12-01&quot;</span>, <span class="st">&quot;360_day&quot;</span>, <span class="dv">19830</span><span class="sc">:</span><span class="dv">90029</span>))</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="co">#&gt; CF calendar:</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1949-12-01 00:00:00</span></span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a><span class="co">#&gt;   Type    : 360_day</span></span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a><span class="co">#&gt; Time series:</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a><span class="co">#&gt;   Elements: [2005-01-01 .. 2199-12-30] (average of 1.000000 days between 70200 elements)</span></span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="co">#&gt;   Bounds  : not set</span></span></code></pre></div>
+<p>The <code>CFtime()</code> function takes a description (which is
+actually a unit - “days” - in reference to an origin - “1949-12-01”), a
+calendar description, and a vector of <em>offsets</em> from that origin.
+Once a <code>CFTime</code> instance is created its origin and calendar
+cannot be changed anymore. Offsets may be added.</p>
 <p>In practice, these parameters will be taken from the data set of
-interest. CF Metadata Conventions require data sets to be in the NetCDF
+interest. CF Metadata Conventions require data sets to be in the netCDF
 format, with all metadata describing the data set included in a single
 file, including the mandatory “Conventions” global attribute which
 should have a string identifying the version of the CF Metadata
 Conventions that this file adheres to (among possible others). Not
-surprisingly, all the pieces of interest are contained in the mandatory
-<code>time</code> dimension of the file. The process then becomes as
-follows, for a CMIP6 file of daily precipitation:</p>
+surprisingly, all the pieces of interest are contained in the “time”
+dimension of the file. The process then becomes as follows, for a CMIP6
+file of daily precipitation:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Opening a data file that is included with the package and showing some attributes.</span></span>
 <span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="co"># Usually you would `list.files()` on a directory of your choice.</span></span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>fn <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="at">path =</span> <span class="fu">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="at">package =</span> <span class="st">&quot;CFtime&quot;</span>), <span class="at">full.names =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span>]</span>
@@ -472,52 +509,50 @@ follows, for a CMIP6 file of daily precipitation:</p>
 <span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>attrs<span class="sc">$</span>Conventions</span>
 <span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; [1] &quot;CF-1.7 CMIP-6.0 UGRID-1.0&quot;</span></span>
 <span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a></span>
-<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co"># Create the CFtime instance from the metadata in the file.</span></span>
-<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>units, </span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co"># Create the CFTime instance from the metadata in the file.</span></span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>(t <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>units, </span>
 <span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>             nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>calendar, </span>
-<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>             nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>vals)</span>
-<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>cf</span>
-<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; CF datum of origin:</span></span>
-<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1850-01-01 00:00:00</span></span>
-<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
-<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt;   Calendar: noleap</span></span>
-<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt; CF time series:</span></span>
-<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt;   Elements: [2015-01-01 12:00:00 .. 2099-12-31 12:00:00] (average of 1.000000 days between 31025 elements)</span></span>
-<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt;   Bounds  : not set</span></span></code></pre></div>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>             nc<span class="sc">$</span>dim<span class="sc">$</span>time<span class="sc">$</span>vals))</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; CF calendar:</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1850-01-01 00:00:00</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt;   Type    : noleap</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; Time series:</span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt;   Elements: [2015-01-01 12:00:00 .. 2099-12-31 12:00:00] (average of 1.000000 days between 31025 elements)</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt;   Bounds  : not set</span></span></code></pre></div>
 <p>You can see from the global attribute “Conventions” that the file
 adheres to the CF Metadata Conventions, among others. According to the
 CF conventions, <code>units</code> and <code>calendar</code> are
-required attributes of the <code>time</code> dimension in the NetCDF
+required attributes of the <code>time</code> dimension in the netCDF
 file, and <code>nc$dim$time$vals</code> are the offset values, or
 <code>dimnames()</code> in <code>R</code> terms, for the
 <code>time</code> dimension of the data.</p>
 <p>The above example (and others in this vignette) use the
 <code>ncdf4</code> package. If you are using the <code>RNetCDF</code>
 package, checking for CF conventions and then creating a
-<code>CFtime</code> instance goes like this:</p>
+<code>CFTime</code> instance goes like this:</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">library</span>(RNetCDF)</span>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>nc <span class="ot">&lt;-</span> <span class="fu">open.nc</span>(fn)</span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="fu">att.get.nc</span>(nc, <span class="sc">-</span><span class="dv">1</span>, <span class="st">&quot;Conventions&quot;</span>)</span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co">#&gt; [1] &quot;CF-1.7 CMIP-6.0 UGRID-1.0&quot;</span></span>
-<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(<span class="fu">att.get.nc</span>(nc, <span class="st">&quot;time&quot;</span>, <span class="st">&quot;units&quot;</span>), </span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>(t <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(<span class="fu">att.get.nc</span>(nc, <span class="st">&quot;time&quot;</span>, <span class="st">&quot;units&quot;</span>), </span>
 <span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>             <span class="fu">att.get.nc</span>(nc, <span class="st">&quot;time&quot;</span>, <span class="st">&quot;calendar&quot;</span>), </span>
-<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>             <span class="fu">var.get.nc</span>(nc, <span class="st">&quot;time&quot;</span>))</span>
-<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>cf</span>
-<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt; CF datum of origin:</span></span>
-<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1850-01-01 00:00:00</span></span>
-<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
-<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt;   Calendar: noleap</span></span>
-<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; CF time series:</span></span>
-<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt;   Elements: [2015-01-01 12:00:00 .. 2099-12-31 12:00:00] (average of 1.000000 days between 31025 elements)</span></span>
-<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt;   Bounds  : not set</span></span></code></pre></div>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>             <span class="fu">var.get.nc</span>(nc, <span class="st">&quot;time&quot;</span>)))</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a><span class="co">#&gt; CF calendar:</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1850-01-01 00:00:00</span></span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co">#&gt;   Type    : noleap</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; Time series:</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt;   Elements: [2015-01-01 12:00:00 .. 2099-12-31 12:00:00] (average of 1.000000 days between 31025 elements)</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt;   Bounds  : not set</span></span></code></pre></div>
 <p>The corresponding character representations of the time series can be
 easily generated:</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>dates <span class="ot">&lt;-</span> <span class="fu">as_timestamp</span>(cf, <span class="at">format =</span> <span class="st">&quot;date&quot;</span>)</span>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>dates <span class="ot">&lt;-</span> <span class="fu">as_timestamp</span>(t, <span class="at">format =</span> <span class="st">&quot;date&quot;</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>dates[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;2015-01-01&quot; &quot;2015-01-02&quot; &quot;2015-01-03&quot; &quot;2015-01-04&quot; &quot;2015-01-05&quot;</span></span>
 <span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;  [6] &quot;2015-01-06&quot; &quot;2015-01-07&quot; &quot;2015-01-08&quot; &quot;2015-01-09&quot; &quot;2015-01-10&quot;</span></span></code></pre></div>
-<p>…as well as the full range of the time series:</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">range</span>(cf)</span>
+<p>…as well as the range of the time series:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">range</span>(t)</span>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a><span class="co">#&gt; [1] &quot;2015-01-01 12:00:00&quot; &quot;2099-12-31 12:00:00&quot;</span></span></code></pre></div>
 <p>Note that in this latter case, if any of the timestamps in the time
 series have a time that is other than <code>00:00:00</code> then the
@@ -535,63 +570,45 @@ the data to some lower resolution such as a dekad (10-day period), a
 month or a meteorological season, and then compute a derivative value
 such as the dekadal sum of precipitation, monthly minimum/maximum daily
 temperature, or seasonal average daily short-wave irradiance.</p>
-<p>It is also possible to create factors for multiple “epochs” in one
-go. This greatly reduces programming effort if you want to calculate
+<p>It is also possible to create factors for multiple “eras” in one go.
+This greatly reduces programming effort if you want to calculate
 anomalies over multiple future periods. A complete example is provided
 in the vignette <a href="Processing.html">“Processing climate projection
 data”</a>.</p>
 <p>It is easy to generate the factors that you need once you have a
-<code>CFtime</code> instance prepared:</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># Create a dekad factor for the whole `cf` time series that was created above</span></span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>f_k <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(cf, <span class="st">&quot;dekad&quot;</span>)</span>
+<code>CFTime</code> instance prepared:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># Create a dekad factor for the whole `t` time series that was created above</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>f_k <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(t, <span class="st">&quot;dekad&quot;</span>)</span>
 <span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">str</span>(f_k)</span>
 <span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt;  Factor w/ 3060 levels &quot;2015D01&quot;,&quot;2015D02&quot;,..: 1 1 1 1 1 1 1 1 1 1 ...</span></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;epoch&quot;)= int -1</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;era&quot;)= int -1</span></span>
 <span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;period&quot;)= chr &quot;dekad&quot;</span></span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;CFtime&quot;)=Formal class &#39;CFtime&#39; [package &quot;CFtime&quot;] with 4 slots</span></span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt;   .. ..@ datum     :Formal class &#39;CFdatum&#39; [package &quot;CFtime&quot;] with 5 slots</span></span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt;   .. .. .. ..@ definition: chr &quot;days since 1850-01-01&quot;</span></span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt;   .. .. .. ..@ unit      : int 4</span></span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt;   .. .. .. ..@ origin    :&#39;data.frame&#39;:  1 obs. of  8 variables:</span></span>
-<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt;   .. .. .. .. ..$ year  : int 1850</span></span>
-<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt;   .. .. .. .. ..$ month : num 1</span></span>
-<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt;   .. .. .. .. ..$ day   : num 1</span></span>
-<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt;   .. .. .. .. ..$ hour  : num 0</span></span>
-<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt;   .. .. .. .. ..$ minute: num 0</span></span>
-<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt;   .. .. .. .. ..$ second: num 0</span></span>
-<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt;   .. .. .. .. ..$ tz    : chr &quot;+0000&quot;</span></span>
-<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt;   .. .. .. .. ..$ offset: num 0</span></span>
-<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt;   .. .. .. ..@ calendar  : chr &quot;noleap&quot;</span></span>
-<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt;   .. .. .. ..@ cal_id    : int 4</span></span>
-<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt;   .. ..@ resolution: num 14.9</span></span>
-<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt;   .. ..@ offsets   : num [1:3060] 60230 60240 60250 60261 60271 ...</span></span>
-<span id="cb7-24"><a href="#cb7-24" tabindex="-1"></a><span class="co">#&gt;   .. ..@ bounds    : logi TRUE</span></span>
-<span id="cb7-25"><a href="#cb7-25" tabindex="-1"></a></span>
-<span id="cb7-26"><a href="#cb7-26" tabindex="-1"></a><span class="co"># Create monthly factors for a baseline epoch and early, mid and late 21st century epochs</span></span>
-<span id="cb7-27"><a href="#cb7-27" tabindex="-1"></a>baseline <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(cf, <span class="at">epoch =</span> <span class="dv">1991</span><span class="sc">:</span><span class="dv">2020</span>)</span>
-<span id="cb7-28"><a href="#cb7-28" tabindex="-1"></a>future <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(cf, <span class="at">epoch =</span> <span class="fu">list</span>(<span class="at">early =</span> <span class="dv">2021</span><span class="sc">:</span><span class="dv">2040</span>, <span class="at">mid =</span> <span class="dv">2041</span><span class="sc">:</span><span class="dv">2060</span>, <span class="at">late =</span> <span class="dv">2061</span><span class="sc">:</span><span class="dv">2080</span>))</span>
-<span id="cb7-29"><a href="#cb7-29" tabindex="-1"></a><span class="fu">str</span>(future)</span>
-<span id="cb7-30"><a href="#cb7-30" tabindex="-1"></a><span class="co">#&gt; List of 3</span></span>
-<span id="cb7-31"><a href="#cb7-31" tabindex="-1"></a><span class="co">#&gt;  $ early: Factor w/ 12 levels &quot;01&quot;,&quot;02&quot;,&quot;03&quot;,..: NA NA NA NA NA NA NA NA NA NA ...</span></span>
-<span id="cb7-32"><a href="#cb7-32" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;epoch&quot;)= int 20</span></span>
-<span id="cb7-33"><a href="#cb7-33" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;period&quot;)= chr &quot;month&quot;</span></span>
-<span id="cb7-34"><a href="#cb7-34" tabindex="-1"></a><span class="co">#&gt;  $ mid  : Factor w/ 12 levels &quot;01&quot;,&quot;02&quot;,&quot;03&quot;,..: NA NA NA NA NA NA NA NA NA NA ...</span></span>
-<span id="cb7-35"><a href="#cb7-35" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;epoch&quot;)= int 20</span></span>
-<span id="cb7-36"><a href="#cb7-36" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;period&quot;)= chr &quot;month&quot;</span></span>
-<span id="cb7-37"><a href="#cb7-37" tabindex="-1"></a><span class="co">#&gt;  $ late : Factor w/ 12 levels &quot;01&quot;,&quot;02&quot;,&quot;03&quot;,..: NA NA NA NA NA NA NA NA NA NA ...</span></span>
-<span id="cb7-38"><a href="#cb7-38" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;epoch&quot;)= int 20</span></span>
-<span id="cb7-39"><a href="#cb7-39" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;period&quot;)= chr &quot;month&quot;</span></span></code></pre></div>
-<p>For the “epoch” version, there are two interesting things to note
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt;  - attr(*, &quot;CFTime&quot;)=Classes &#39;CFTime&#39;, &#39;R6&#39; 2015-01-06 00:00:00 2015-01-16 00:00:00 2015-01-26 12:00:00 2015-02-06 00:00:00 2015-02-16 00:00:00 2015-02-25 00:00:00 2015-03-06 00:00:00 2015-03-16 00:00:00 2015-03-26 12:00:00 2015-04-06 00:00:00 2015-04-16 00:00:00 2015-04-26 00:00:00 2015-05-06 00:00:00 2015-05-16 00:00:00 2015-05-26 12:00:00 2015-06-06 00:00:00 2015-06-16 00:00:00 2015-06-26 00:00:00 2015-07-06 00:00:00 2015-07-16 00:00:00 2015-07-26 12:00:00 2015-08-06 00:00:00 2015-08-16 00:00:00 2015-08-26 12:00:00 2015-09-06 00:00:00 2015-09-16 00:00:00 2015-09-26 00:00:00 2015-10-06 00:00:00 2015-10-16 00:00:00 2015-10-26 12:00:00 2015-11-06 00:00:00 2015-11-16 00:00:00 2015-11-26 00:00:00 2015-12-06 00:00:00 2015-12-16 00:00:00 2015-12-26 12:00:00 2016-01-06 00:00:00 2016-01-16 00:00:00 2016-01-26 12:00:00 2016-02-06 00:00:00 2016-02-16 00:00:00 2016-02-25 00:00:00 2016-03-06 00:00:00 2016-03-16 00:00:00 2016-03-26 12:00:00 2016-04-06 00:00:00 2016-04-16 00:00:00 2016-04-26 00:00:00 2016-05-06 00:00:00 2016-05-16 00:00:00 2016-05-26 12:00:00 2016-06-06 00:00:00 2016-06-16 00:00:00 2016-06-26 00:00:00 2016-07-06 00:00:00 2016-07-16 00:00:00 2016-07-26 12:00:00 2016-08-06 00:00:00 2016-08-16 00:00:00 2016-08-26 12:00:00 2016-09-06 00:00:00 2016-09-16 00:00:00 2016-09-26 00:00:00 2016-10-06 00:00:00 2016-10-16 00:00:00 2016-10-26 12:00:00 2016-11-06 00:00:00 2016-11-16 00:00:00 2016-11-26 00:00:00 2016-12-06 00:00:00 2016-12-16 00:00:00 2016-12-26 12:00:00 2017-01-06 00:00:00 2017-01-16 00:00:00 2017-01-26 12:00:00 2017-02-06 00:00:00 2017-02-16 00:00:00 2017-02-25 00:00:00 2017-03-06 00:00:00 2017-03-16 00:00:00 2017-03-26 12:00:00 2017-04-06 00:00:00 2017-04-16 00:00:00 2017-04-26 00:00:00 2017-05-06 00:00:00 2017-05-16 00:00:00 2017-05-26 12:00:00 2017-06-06 00:00:00 2017-06-16 00:00:00 2017-06-26 00:00:00 2017-07-06 00:00:00 2017-07-16 00:00:00 2017-07-26 12:00:00 2017-08-06 00:00:00 2017-08-16 00:00:00 2017-08-26 12:00:00 2017-09-06 00:00:00 2017-09-16 00:00:00 2017-09-26 00:00:00 2017-10-06 00:00:00 2017-10-16 00:00:00 2017-10-26 12:00:00 2017-11-06 00:00:00 2017-11-16 00:00:00 2017-11-26 00:00:00 2017-12-06 00:00:00 2017-12-16 00:00:00 2017-12-26 12:00:00 2018-01-06 00:00:00 2018-01-16 00:00:00 2018-01-26 12:00:00 2018-02-06 00:00:00 2018-02-16 00:00:00 2018-02-25 00:00:00 2018-03-06 00:00:00 2018-03-16 00:00:00 2018-03-26 12:00:00 2018-04-06 00:00:00 2018-04-16 00:00:00 2018-04-26 00:00:00 2018-05-06 00:00:00 2018-05-16 00:00:00 2018-05-26 12:00:00 2018-06-06 00:00:00 2018-06-16 00:00:00 2018-06-26 00:00:00 2018-07-06 00:00:00 2018-07-16 00:00:00 2018-07-26 12:00:00 2018-08-06 00:00:00 2018-08-16 00:00:00 2018-08-26 12:00:00 2018-09-06 00:00:00 2018-09-16 00:00:00 2018-09-26 00:00:00 2018-10-06 00:00:00 2018-10-16 00:00:00 2018-10-26 12:00:00 2018-11-06 00:00:00 2018-11-16 00:00:00 2018-11-26 00:00:00 2018-12-06 00:00:00 2018-12-16 00:00:00 2018-12-26 12:00:00 2019-01-06 00:00:00 2019-01-16 00:00:00 2019-01-26 12:00:00 2019-02-06 00:00:00 2019-02-16 00:00:00 2019-02-25 00:00:00 2019-03-06 00:00:00 2019-03-16 00:00:00 2019-03-26 12:00:00 2019-04-06 00:00:00 2019-04-16 00:00:00 2019-04-26 00:00:00 2019-05-06 00:00:00 2019-05-16 00:00:00 2019-05-26 12:00:00 2019-06-06 00:00:00 2019-06-16 00:00:00 2019-06-26 00:00:00 2019-07-06 00:00:00 2019-07-16 00:00:00 2019-07-26 12:00:00 2019-08-06 00:00:00 2019-08-16 00:00:00 2019-08-26 12:00:00 2019-09-06 00:00:00 2019-09-16 00:00:00 2019-09-26 00:00:00 2019-10-06 00:00:00 2019-10-16 00:00:00 2019-10-26 12:00:00 2019-11-06 00:00:00 2019-11-16 00:00:00 2019-11-26 00:00:00 2019-12-06 00:00:00 2019-12-16 00:00:00 2019-12-26 12:00:00 2020-01-06 00:00:00 2020-01-16 00:00:00 2020-01-26 12:00:00 2020-02-06 00:00:00 2020-02-16 00:00:00 2020-02-25 00:00:00 2020-03-06 00:00:00 2020-03-16 00:00:00 2020-03-26 12:00:00 2020-04-06 00:00:00 2020-04-16 00:00:00 2020-04-26 00:00:00 2020-05-06 00:00:00 2020-05-16 00:00:00 2020-05-26 12:00:00 2020-06-06 00:00:00 2020-06-16 00:00:00 2020-06-26 00:00:00 2020-07-06 00:00:00 2020-07-16 00:00:00 2020-07-26 12:00:00 2020-08-06 00:00:00 2020-08-16 00:00:00 2020-08-26 12:00:00 2020-09-06 00:00:00 2020-09-16 00:00:00 2020-09-26 00:00:00 2020-10-06 00:00:00 2020-10-16 00:00:00 2020-10-26 12:00:00 2020-11-06 00:00:00 2020-11-16 00:00:00 2020-11-26 00:00:00 2020-12-06 00:00:00 2020-12-16 00:00:00 2020-12-26 12:00:00 2021-01-06 00:00:00 2021-01-16 00:00:00 2021-01-26 12:00:00 2021-02-06 00:00:00 2021-02-16 00:00:00 2021-02-25 00:00:00 2021-03-06 00:00:00 2021-03-16 00:00:00 2021-03-26 12:00:00 2021-04-06 00:00:00 2021-04-16 00:00:00 2021-04-26 00:00:00 2021-05-06 00:00:00 2021-05-16 00:00:00 2021-05-26 12:00:00 2021-06-06 00:00:00 2021-06-16 00:00:00 2021-06-26 00:00:00 2021-07-06 00:00:00 2021-07-16 00:00:00 2021-07-26 12:00:00 2021-08-06 00:00:00 2021-08-16 00:00:00 2021-08-26 12:00:00 2021-09-06 00:00:00 2021-09-16 00:00:00 2021-09-26 00:00:00 2021-10-06 00:00:00 2021-10-16 00:00:00 2021-10-26 12:00:00 2021-11-06 00:00:00 2021-11-16 00:00:00 2021-11-26 00:00:00 2021-12-06 00:00:00 2021-12-16 00:00:00 2021-12-26 12:00:00 2022-01-06 00:00:00 2022-01-16 00:00:00 2022-01-26 12:00:00 2022-02-06 00:00:00 2022-02-16 00:00:00 2022-02-25 00:00:00 2022-03-06 00:00:00 2022-03-16 00:00:00 2022-03-26 12:00:00 2022-04-06 00:00:00 2022-04-16 00:00:00 2022-04-26 00:00:00 2022-05-06 00:00:00 2022-05-16 00:00:00 2022-05-26 12:00:00 2022-06-06 00:00:00 2022-06-16 00:00:00 2022-06-26 00:00:00 2022-07-06 00:00:00 2022-07-16 00:00:00 2022-07-26 12:00:00 2022-08-06 00:00:00 2022-08-16 00:00:00 2022-08-26 12:00:00 2022-09-06 00:00:00 2022-09-16 00:00:00 2022-09-26 00:00:00 2022-10-06 00:00:00 2022-10-16 00:00:00 2022-10-26 12:00:00 2022-11-06 00:00:00 2022-11-16 00:00:00 2022-11-26 00:00:00 2022-12-06 00:00:00 2022-12-16 00:00:00 2022-12-26 12:00:00 2023-01-06 00:00:00 2023-01-16 00:00:00 2023-01-26 12:00:00 2023-02-06 00:00:00 2023-02-16 00:00:00 2023-02-25 00:00:00 2023-03-06 00:00:00 2023-03-16 00:00:00 2023-03-26 12:00:00 2023-04-06 00:00:00 2023-04-16 00:00:00 2023-04-26 00:00:00 2023-05-06 00:00:00 2023-05-16 00:00:00 2023-05-26 12:00:00 2023-06-06 00:00:00 2023-06-16 00:00:00 2023-06-26 00:00:00 2023-07-06 00:00:00 2023-07-16 00:00:00 2023-07-26 12:00:00 2023-08-06 00:00:00 2023-08-16 00:00:00 2023-08-26 12:00:00 2023-09-06 00:00:00 2023-09-16 00:00:00 2023-09-26 00:00:00 2023-10-06 00:00:00 2023-10-16 00:00:00 2023-10-26 12:00:00 2023-11-06 00:00:00 2023-11-16 00:00:00 2023-11-26 00:00:00 2023-12-06 00:00:00 2023-12-16 00:00:00 2023-12-26 12:00:00 2024-01-06 00:00:00 2024-01-16 00:00:00 2024-01-26 12:00:00 2024-02-06 00:00:00 2024-02-16 00:00:00 2024-02-25 00:00:00 2024-03-06 00:00:00 2024-03-16 00:00:00 2024-03-26 12:00:00 2024-04-06 00:00:00 2024-04-16 00:00:00 2024-04-26 00:00:00 2024-05-06 00:00:00 2024-05-16 00:00:00 2024-05-26 12:00:00 2024-06-06 00:00:00 2024-06-16 00:00:00 2024-06-26 00:00:00 2024-07-06 00:00:00 2024-07-16 00:00:00 2024-07-26 12:00:00 2024-08-06 00:00:00 2024-08-16 00:00:00 2024-08-26 12:00:00 2024-09-06 00:00:00 2024-09-16 00:00:00 2024-09-26 00:00:00 2024-10-06 00:00:00 2024-10-16 00:00:00 2024-10-26 12:00:00 2024-11-06 00:00:00 2024-11-16 00:00:00 2024-11-26 00:00:00 2024-12-06 00:00:00 2024-12-16 00:00:00 2024-12-26 12:00:00 2025-01-06 00:00:00 2025-01-16 00:00:00 2025-01-26 12:00:00 2025-02-06 00:00:00 2025-02-16 00:00:00 2025-02-25 00:00:00 2025-03-06 00:00:00 2025-03-16 00:00:00 2025-03-26 12:00:00 2025-04-06 00:00:00 2025-04-16 00:00:00 2025-04-26 00:00:00 2025-05-06 00:00:00 2025-05-16 00:00:00 2025-05-26 12:00:00 2025-06-06 00:00:00 2025-06-16 00:00:00 2025-06-26 00:00:00 2025-07-06 00:00:00 2025-07-16 00:00:00 2025-07-26 12:00:00 2025-08-06 00:00:00 2025-08-16 00:00:00 2025-08-26 12:00:00 2025-09-06 00:00:00 2025-09-16 00:00:00 2025-09-26 00:00:00 2025-10-06 00:00:00 2025-10-16 00:00:00 2025-10-26 12:00:00 2025-11-06 00:00:00 2025-11-16 00:00:00 2025-11-26 00:00:00 2025-12-06 00:00:00 2025-12-16 00:00:00 2025-12-26 12:00:00 2026-01-06 00:00:00 2026-01-16 00:00:00 2026-01-26 12:00:00 2026-02-06 00:00:00 2026-02-16 00:00:00 2026-02-25 00:00:00 2026-03-06 00:00:00 2026-03-16 00:00:00 2026-03-26 12:00:00 2026-04-06 00:00:00 2026-04-16 00:00:00 2026-04-26 00:00:00 2026-05-06 00:00:00 2026-05-16 00:00:00 2026-05-26 12:00:00 2026-06-06 00:00:00 2026-06-16 00:00:00 2026-06-26 00:00:00 2026-07-06 00:00:00 2026-07-16 00:00:00 2026-07-26 12:00:00 2026-08-06 00:00:00 2026-08-16 00:00:00 2026-08-26 12:00:00 2026-09-06 00:00:00 2026-09-16 00:00:00 2026-09-26 00:00:00 2026-10-06 00:00:00 2026-10-16 00:00:00 2026-10-26 12:00:00 2026-11-06 00:00:00 2026-11-16 00:00:00 2026-11-26 00:00:00 2026-12-06 00:00:00 2026-12-16 00:00:00 2026-12-26 12:00:00 2027-01-06 00:00:00 2027-01-16 00:00:00 2027-01-26 12:00:00 2027-02-06 00:00:00 2027-02-16 00:00:00 2027-02-25 00:00:00 2027-03-06 00:00:00 2027-03-16 00:00:00 2027-03-26 12:00:00 2027-04-06 00:00:00 2027-04-16 00:00:00 2027-04-26 00:00:00 2027-05-06 00:00:00 2027-05-16 00:00:00 2027-05-26 12:00:00 2027-06-06 00:00:00 2027-06-16 00:00:00 2027-06-26 00:00:00 2027-07-06 00:00:00 2027-07-16 00:00:00 2027-07-26 12:00:00 2027-08-06 00:00:00 2027-08-16 00:00:00 2027-08-26 12:00:00 2027-09-06 00:00:00 2027-09-16 00:00:00 2027-09-26 00:00:00 2027-10-06 00:00:00 2027-10-16 00:00:00 2027-10-26 12:00:00 2027-11-06 00:00:00 2027-11-16 00:00:00 2027-11-26 00:00:00 2027-12-06 00:00:00 2027-12-16 00:00:00 2027-12-26 12:00:00 2028-01-06 00:00:00 2028-01-16 00:00:00 2028-01-26 12:00:00 2028-02-06 00:00:00 2028-02-16 00:00:00 2028-02-25 00:00:00 2028-03-06 00:00:00 2028-03-16 00:00:00 2028-03-26 12:00:00 2028-04-06 00:00:00 2028-04-16 00:00:00 2028-04-26 00:00:00 2028-05-06 00:00:00 2028-05-16 00:00:00 2028-05-26 12:00:00 2028-06-06 00:00:00 2028-06-16 00:00:00 2028-06-26 00:00:00 2028-07-06 00:00:00 2028-07-16 00:00:00 2028-07-26 12:00:00 2028-08-06 00:00:00 2028-08-16 00:00:00 2028-08-26 12:00:00 2028-09-06 00:00:00 2028-09-16 00:00:00 2028-09-26 00:00:00 2028-10-06 00:00:00 2028-10-16 00:00:00 2028-10-26 12:00:00 2028-11-06 00:00:00 2028-11-16 00:00:00 2028-11-26 00:00:00 2028-12-06 00:00:00 2028-12-16 00:00:00 2028-12-26 12:00:00 2029-01-06 00:00:00 2029-01-16 00:00:00 2029-01-26 12:00:00 2029-02-06 00:00:00 2029-02-16 00:00:00 2029-02-25 00:00:00 2029-03-06 00:00:00 2029-03-16 00:00:00 2029-03-26 12:00:00 2029-04-06 00:00:00 2029-04-16 00:00:00 2029-04-26 00:00:00 2029-05-06 00:00:00 2029-05-16 00:00:00 2029-05-26 12:00:00 2029-06-06 00:00:00 2029-06-16 00:00:00 2029-06-26 00:00:00 2029-07-06 00:00:00 2029-07-16 00:00:00 2029-07-26 12:00:00 2029-08-06 00:00:00 2029-08-16 00:00:00 2029-08-26 12:00:00 2029-09-06 00:00:00 2029-09-16 00:00:00 2029-09-26 00:00:00 2029-10-06 00:00:00 2029-10-16 00:00:00 2029-10-26 12:00:00 2029-11-06 00:00:00 2029-11-16 00:00:00 2029-11-26 00:00:00 2029-12-06 00:00:00 2029-12-16 00:00:00 2029-12-26 12:00:00 2030-01-06 00:00:00 2030-01-16 00:00:00 2030-01-26 12:00:00 2030-02-06 00:00:00 2030-02-16 00:00:00 2030-02-25 00:00:00 2030-03-06 00:00:00 2030-03-16 00:00:00 2030-03-26 12:00:00 2030-04-06 00:00:00 2030-04-16 00:00:00 2030-04-26 00:00:00 2030-05-06 00:00:00 2030-05-16 00:00:00 2030-05-26 12:00:00 2030-06-06 00:00:00 2030-06-16 00:00:00 2030-06-26 00:00:00 2030-07-06 00:00:00 2030-07-16 00:00:00 2030-07-26 12:00:00 2030-08-06 00:00:00 2030-08-16 00:00:00 2030-08-26 12:00:00 2030-09-06 00:00:00 2030-09-16 00:00:00 2030-09-26 00:00:00 2030-10-06 00:00:00 2030-10-16 00:00:00 2030-10-26 12:00:00 2030-11-06 00:00:00 2030-11-16 00:00:00 2030-11-26 00:00:00 2030-12-06 00:00:00 2030-12-16 00:00:00 2030-12-26 12:00:00 2031-01-06 00:00:00 2031-01-16 00:00:00 2031-01-26 12:00:00 2031-02-06 00:00:00 2031-02-16 00:00:00 2031-02-25 00:00:00 2031-03-06 00:00:00 2031-03-16 00:00:00 2031-03-26 12:00:00 2031-04-06 00:00:00 2031-04-16 00:00:00 2031-04-26 00:00:00 2031-05-06 00:00:00 2031-05-16 00:00:00 2031-05-26 12:00:00 2031-06-06 00:00:00 2031-06-16 00:00:00 2031-06-26 00:00:00 2031-07-06 00:00:00 2031-07-16 00:00:00 2031-07-26 12:00:00 2031-08-06 00:00:00 2031-08-16 00:00:00 2031-08-26 12:00:00 2031-09-06 00:00:00 2031-09-16 00:00:00 2031-09-26 00:00:00 2031-10-06 00:00:00 2031-10-16 00:00:00 2031-10-26 12:00:00 2031-11-06 00:00:00 2031-11-16 00:00:00 2031-11-26 00:00:00 2031-12-06 00:00:00 2031-12-16 00:00:00 2031-12-26 12:00:00 2032-01-06 00:00:00 2032-01-16 00:00:00 2032-01-26 12:00:00 2032-02-06 00:00:00 2032-02-16 00:00:00 2032-02-25 00:00:00 2032-03-06 00:00:00 2032-03-16 00:00:00 2032-03-26 12:00:00 2032-04-06 00:00:00 2032-04-16 00:00:00 2032-04-26 00:00:00 2032-05-06 00:00:00 2032-05-16 00:00:00 2032-05-26 12:00:00 2032-06-06 00:00:00 2032-06-16 00:00:00 2032-06-26 00:00:00 2032-07-06 00:00:00 2032-07-16 00:00:00 2032-07-26 12:00:00 2032-08-06 00:00:00 2032-08-16 00:00:00 2032-08-26 12:00:00 2032-09-06 00:00:00 2032-09-16 00:00:00 2032-09-26 00:00:00 2032-10-06 00:00:00 2032-10-16 00:00:00 2032-10-26 12:00:00 2032-11-06 00:00:00 2032-11-16 00:00:00 2032-11-26 00:00:00 2032-12-06 00:00:00 2032-12-16 00:00:00 2032-12-26 12:00:00 2033-01-06 00:00:00 2033-01-16 00:00:00 2033-01-26 12:00:00 2033-02-06 00:00:00 2033-02-16 00:00:00 2033-02-25 00:00:00 2033-03-06 00:00:00 2033-03-16 00:00:00 2033-03-26 12:00:00 2033-04-06 00:00:00 2033-04-16 00:00:00 2033-04-26 00:00:00 2033-05-06 00:00:00 2033-05-16 00:00:00 2033-05-26 12:00:00 2033-06-06 00:00:00 2033-06-16 00:00:00 2033-06-26 00:00:00 2033-07-06 00:00:00 2033-07-16 00:00:00 2033-07-26 12:00:00 2033-08-06 00:00:00 2033-08-16 00:00:00 2033-08-26 12:00:00 2033-09-06 00:00:00 2033-09-16 00:00:00 2033-09-26 00:00:00 2033-10-06 00:00:00 2033-10-16 00:00:00 2033-10-26 12:00:00 2033-11-06 00:00:00 2033-11-16 00:00:00 2033-11-26 00:00:00 2033-12-06 00:00:00 2033-12-16 00:00:00 2033-12-26 12:00:00 2034-01-06 00:00:00 2034-01-16 00:00:00 2034-01-26 12:00:00 2034-02-06 00:00:00 2034-02-16 00:00:00 2034-02-25 00:00:00 2034-03-06 00:00:00 2034-03-16 00:00:00 2034-03-26 12:00:00 2034-04-06 00:00:00 2034-04-16 00:00:00 2034-04-26 00:00:00 2034-05-06 00:00:00 2034-05-16 00:00:00 2034-05-26 12:00:00 2034-06-06 00:00:00 2034-06-16 00:00:00 2034-06-26 00:00:00 2034-07-06 00:00:00 2034-07-16 00:00:00 2034-07-26 12:00:00 2034-08-06 00:00:00 2034-08-16 00:00:00 2034-08-26 12:00:00 2034-09-06 00:00:00 2034-09-16 00:00:00 2034-09-26 00:00:00 2034-10-06 00:00:00 2034-10-16 00:00:00 2034-10-26 12:00:00 2034-11-06 00:00:00 2034-11-16 00:00:00 2034-11-26 00:00:00 2034-12-06 00:00:00 2034-12-16 00:00:00 2034-12-26 12:00:00 2035-01-06 00:00:00 2035-01-16 00:00:00 2035-01-26 12:00:00 2035-02-06 00:00:00 2035-02-16 00:00:00 2035-02-25 00:00:00 2035-03-06 00:00:00 2035-03-16 00:00:00 2035-03-26 12:00:00 2035-04-06 00:00:00 2035-04-16 00:00:00 2035-04-26 00:00:00 2035-05-06 00:00:00 2035-05-16 00:00:00 2035-05-26 12:00:00 2035-06-06 00:00:00 2035-06-16 00:00:00 2035-06-26 00:00:00 2035-07-06 00:00:00 2035-07-16 00:00:00 2035-07-26 12:00:00 2035-08-06 00:00:00 2035-08-16 00:00:00 2035-08-26 12:00:00 2035-09-06 00:00:00 2035-09-16 00:00:00 2035-09-26 00:00:00 2035-10-06 00:00:00 2035-10-16 00:00:00 2035-10-26 12:00:00 2035-11-06 00:00:00 2035-11-16 00:00:00 2035-11-26 00:00:00 2035-12-06 00:00:00 2035-12-16 00:00:00 2035-12-26 12:00:00 2036-01-06 00:00:00 2036-01-16 00:00:00 2036-01-26 12:00:00 2036-02-06 00:00:00 2036-02-16 00:00:00 2036-02-25 00:00:00 2036-03-06 00:00:00 2036-03-16 00:00:00 2036-03-26 12:00:00 2036-04-06 00:00:00 2036-04-16 00:00:00 2036-04-26 00:00:00 2036-05-06 00:00:00 2036-05-16 00:00:00 2036-05-26 12:00:00 2036-06-06 00:00:00 2036-06-16 00:00:00 2036-06-26 00:00:00 2036-07-06 00:00:00 2036-07-16 00:00:00 2036-07-26 12:00:00 2036-08-06 00:00:00 2036-08-16 00:00:00 2036-08-26 12:00:00 2036-09-06 00:00:00 2036-09-16 00:00:00 2036-09-26 00:00:00 2036-10-06 00:00:00 2036-10-16 00:00:00 2036-10-26 12:00:00 2036-11-06 00:00:00 2036-11-16 00:00:00 2036-11-26 00:00:00 2036-12-06 00:00:00 2036-12-16 00:00:00 2036-12-26 12:00:00 2037-01-06 00:00:00 2037-01-16 00:00:00 2037-01-26 12:00:00 2037-02-06 00:00:00 2037-02-16 00:00:00 2037-02-25 00:00:00 2037-03-06 00:00:00 2037-03-16 00:00:00 2037-03-26 12:00:00 2037-04-06 00:00:00 2037-04-16 00:00:00 2037-04-26 00:00:00 2037-05-06 00:00:00 2037-05-16 00:00:00 2037-05-26 12:00:00 2037-06-06 00:00:00 2037-06-16 00:00:00 2037-06-26 00:00:00 2037-07-06 00:00:00 2037-07-16 00:00:00 2037-07-26 12:00:00 2037-08-06 00:00:00 2037-08-16 00:00:00 2037-08-26 12:00:00 2037-09-06 00:00:00 2037-09-16 00:00:00 2037-09-26 00:00:00 2037-10-06 00:00:00 2037-10-16 00:00:00 2037-10-26 12:00:00 2037-11-06 00:00:00 2037-11-16 00:00:00 2037-11-26 00:00:00 2037-12-06 00:00:00 2037-12-16 00:00:00 2037-12-26 12:00:00 2038-01-06 00:00:00 2038-01-16 00:00:00 2038-01-26 12:00:00 2038-02-06 00:00:00 2038-02-16 00:00:00 2038-02-25 00:00:00 2038-03-06 00:00:00 2038-03-16 00:00:00 2038-03-26 12:00:00 2038-04-06 00:00:00 2038-04-16 00:00:00 2038-04-26 00:00:00 2038-05-06 00:00:00 2038-05-16 00:00:00 2038-05-26 12:00:00 2038-06-06 00:00:00 2038-06-16 00:00:00 2038-06-26 00:00:00 2038-07-06 00:00:00 2038-07-16 00:00:00 2038-07-26 12:00:00 2038-08-06 00:00:00 2038-08-16 00:00:00 2038-08-26 12:00:00 2038-09-06 00:00:00 2038-09-16 00:00:00 2038-09-26 00:00:00 2038-10-06 00:00:00 2038-10-16 00:00:00 2038-10-26 12:00:00 2038-11-06 00:00:00 2038-11-16 00:00:00 2038-11-26 00:00:00 2038-12-06 00:00:00 2038-12-16 00:00:00 2038-12-26 12:00:00 2039-01-06 00:00:00 2039-01-16 00:00:00 2039-01-26 12:00:00 2039-02-06 00:00:00 2039-02-16 00:00:00 2039-02-25 00:00:00 2039-03-06 00:00:00 2039-03-16 00:00:00 2039-03-26 12:00:00 2039-04-06 00:00:00 2039-04-16 00:00:00 2039-04-26 00:00:00 2039-05-06 00:00:00 2039-05-16 00:00:00 2039-05-26 12:00:00 2039-06-06 00:00:00 2039-06-16 00:00:00 2039-06-26 00:00:00 2039-07-06 00:00:00 2039-07-16 00:00:00 2039-07-26 12:00:00 2039-08-06 00:00:00 2039-08-16 00:00:00 2039-08-26 12:00:00 2039-09-06 00:00:00 2039-09-16 00:00:00 2039-09-26 00:00:00 2039-10-06 00:00:00 2039-10-16 00:00:00 2039-10-26 12:00:00 2039-11-06 00:00:00 2039-11-16 00:00:00 2039-11-26 00:00:00 2039-12-06 00:00:00 2039-12-16 00:00:00 2039-12-26 12:00:00 2040-01-06 00:00:00 2040-01-16 00:00:00 2040-01-26 12:00:00 2040-02-06 00:00:00 2040-02-16 00:00:00 2040-02-25 00:00:00 2040-03-06 00:00:00 2040-03-16 00:00:00 2040-03-26 12:00:00 2040-04-06 00:00:00 2040-04-16 00:00:00 2040-04-26 00:00:00 2040-05-06 00:00:00 2040-05-16 00:00:00 2040-05-26 12:00:00 2040-06-06 00:00:00 2040-06-16 00:00:00 2040-06-26 00:00:00 2040-07-06 00:00:00 2040-07-16 00:00:00 2040-07-26 12:00:00 2040-08-06 00:00:00 2040-08-16 00:00:00 2040-08-26 12:00:00 2040-09-06 00:00:00 2040-09-16 00:00:00 2040-09-26 00:00:00 2040-10-06 00:00:00 2040-10-16 00:00:00 2040-10-26 12:00:00 2040-11-06 00:00:00 2040-11-16 00:00:00 2040-11-26 00:00:00 2040-12-06 00:00:00 2040-12-16 00:00:00 2040-12-26 12:00:00 2041-01-06 00:00:00 2041-01-16 00:00:00 2041-01-26 12:00:00 2041-02-06 00:00:00 2041-02-16 00:00:00 2041-02-25 00:00:00 2041-03-06 00:00:00 2041-03-16 00:00:00 2041-03-26 12:00:00 2041-04-06 00:00:00 2041-04-16 00:00:00 2041-04-26 00:00:00 2041-05-06 00:00:00 2041-05-16 00:00:00 2041-05-26 12:00:00 2041-06-06 00:00:00 2041-06-16 00:00:00 2041-06-26 00:00:00 2041-07-06 00:00:00 2041-07-16 00:00:00 2041-07-26 12:00:00 2041-08-06 00:00:00 2041-08-16 00:00:00 2041-08-26 12:00:00 2041-09-06 00:00:00 2041-09-16 00:00:00 2041-09-26 00:00:00 2041-10-06 00:00:00 2041-10-16 00:00:00 2041-10-26 12:00:00 2041-11-06 00:00:00 2041-11-16 00:00:00 2041-11-26 00:00:00 2041-12-06 00:00:00 2041-12-16 00:00:00 2041-12-26 12:00:00 2042-01-06 00:00:00 2042-01-16 00:00:00 2042-01-26 12:00:00 2042-02-06 00:00:00 2042-02-16 00:00:00 2042-02-25 00:00:00 2042-03-06 00:00:00 2042-03-16 00:00:00 2042-03-26 12:00:00 2042-04-06 00:00:00 2042-04-16 00:00:00 2042-04-26 00:00:00 2042-05-06 00:00:00 2042-05-16 00:00:00 2042-05-26 12:00:00 2042-06-06 00:00:00 2042-06-16 00:00:00 2042-06-26 00:00:00 2042-07-06 00:00:00 2042-07-16 00:00:00 2042-07-26 12:00:00 2042-08-06 00:00:00 2042-08-16 00:00:00 2042-08-26 12:00:00 2042-09-06 00:00:00 2042-09-16 00:00:00 2042-09-26 00:00:00 2042-10-06 00:00:00 2042-10-16 00:00:00 2042-10-26 12:00:00 2042-11-06 00:00:00 2042-11-16 00:00:00 2042-11-26 00:00:00 2042-12-06 00:00:00 2042-12-16 00:00:00 2042-12-26 12:00:00 2043-01-06 00:00:00 2043-01-16 00:00:00 2043-01-26 12:00:00 2043-02-06 00:00:00 2043-02-16 00:00:00 2043-02-25 00:00:00 2043-03-06 00:00:00 2043-03-16 00:00:00 2043-03-26 12:00:00 2043-04-06 00:00:00 2043-04-16 00:00:00 2043-04-26 00:00:00 2043-05-06 00:00:00 2043-05-16 00:00:00 2043-05-26 12:00:00 2043-06-06 00:00:00 2043-06-16 00:00:00 2043-06-26 00:00:00 2043-07-06 00:00:00 2043-07-16 00:00:00 2043-07-26 12:00:00 2043-08-06 00:00:00 2043-08-16 00:00:00 2043-08-26 12:00:00 2043-09-06 00:00:00 2043-09-16 00:00:00 2043-09-26 00:00:00 2043-10-06 00:00:00 2043-10-16 00:00:00 2043-10-26 12:00:00 2043-11-06 00:00:00 2043-11-16 00:00:00 2043-11-26 00:00:00 2043-12-06 00:00:00 2043-12-16 00:00:00 2043-12-26 12:00:00 2044-01-06 00:00:00 2044-01-16 00:00:00 2044-01-26 12:00:00 2044-02-06 00:00:00 2044-02-16 00:00:00 2044-02-25 00:00:00 2044-03-06 00:00:00 2044-03-16 00:00:00 2044-03-26 12:00:00 2044-04-06 00:00:00 2044-04-16 00:00:00 2044-04-26 00:00:00 2044-05-06 00:00:00 2044-05-16 00:00:00 2044-05-26 12:00:00 2044-06-06 00:00:00 2044-06-16 00:00:00 2044-06-26 00:00:00 2044-07-06 00:00:00 2044-07-16 00:00:00 2044-07-26 12:00:00 2044-08-06 00:00:00 2044-08-16 00:00:00 2044-08-26 12:00:00 2044-09-06 00:00:00 2044-09-16 00:00:00 2044-09-26 00:00:00 2044-10-06 00:00:00 2044-10-16 00:00:00 2044-10-26 12:00:00 2044-11-06 00:00:00 2044-11-16 00:00:00 2044-11-26 00:00:00 2044-12-06 00:00:00 2044-12-16 00:00:00 2044-12-26 12:00:00 2045-01-06 00:00:00 2045-01-16 00:00:00 2045-01-26 12:00:00 2045-02-06 00:00:00 2045-02-16 00:00:00 2045-02-25 00:00:00 2045-03-06 00:00:00 2045-03-16 00:00:00 2045-03-26 12:00:00 2045-04-06 00:00:00 2045-04-16 00:00:00 2045-04-26 00:00:00 2045-05-06 00:00:00 2045-05-16 00:00:00 2045-05-26 12:00:00 2045-06-06 00:00:00 2045-06-16 00:00:00 2045-06-26 00:00:00 2045-07-06 00:00:00 2045-07-16 00:00:00 2045-07-26 12:00:00 2045-08-06 00:00:00 2045-08-16 00:00:00 2045-08-26 12:00:00 2045-09-06 00:00:00 2045-09-16 00:00:00 2045-09-26 00:00:00 2045-10-06 00:00:00 2045-10-16 00:00:00 2045-10-26 12:00:00 2045-11-06 00:00:00 2045-11-16 00:00:00 2045-11-26 00:00:00 2045-12-06 00:00:00 2045-12-16 00:00:00 2045-12-26 12:00:00 2046-01-06 00:00:00 2046-01-16 00:00:00 2046-01-26 12:00:00 2046-02-06 00:00:00 2046-02-16 00:00:00 2046-02-25 00:00:00 2046-03-06 00:00:00 2046-03-16 00:00:00 2046-03-26 12:00:00 2046-04-06 00:00:00 2046-04-16 00:00:00 2046-04-26 00:00:00 2046-05-06 00:00:00 2046-05-16 00:00:00 2046-05-26 12:00:00 2046-06-06 00:00:00 2046-06-16 00:00:00 2046-06-26 00:00:00 2046-07-06 00:00:00 2046-07-16 00:00:00 2046-07-26 12:00:00 2046-08-06 00:00:00 2046-08-16 00:00:00 2046-08-26 12:00:00 2046-09-06 00:00:00 2046-09-16 00:00:00 2046-09-26 00:00:00 2046-10-06 00:00:00 2046-10-16 00:00:00 2046-10-26 12:00:00 2046-11-06 00:00:00 2046-11-16 00:00:00 2046-11-26 00:00:00 2046-12-06 00:00:00 2046-12-16 00:00:00 2046-12-26 12:00:00 2047-01-06 00:00:00 2047-01-16 00:00:00 2047-01-26 12:00:00 2047-02-06 00:00:00 2047-02-16 00:00:00 2047-02-25 00:00:00 2047-03-06 00:00:00 2047-03-16 00:00:00 2047-03-26 12:00:00 2047-04-06 00:00:00 2047-04-16 00:00:00 2047-04-26 00:00:00 2047-05-06 00:00:00 2047-05-16 00:00:00 2047-05-26 12:00:00 2047-06-06 00:00:00 2047-06-16 00:00:00 2047-06-26 00:00:00 2047-07-06 00:00:00 2047-07-16 00:00:00 2047-07-26 12:00:00 2047-08-06 00:00:00 2047-08-16 00:00:00 2047-08-26 12:00:00 2047-09-06 00:00:00 2047-09-16 00:00:00 2047-09-26 00:00:00 2047-10-06 00:00:00 2047-10-16 00:00:00 2047-10-26 12:00:00 2047-11-06 00:00:00 2047-11-16 00:00:00 2047-11-26 00:00:00 2047-12-06 00:00:00 2047-12-16 00:00:00 2047-12-26 12:00:00 2048-01-06 00:00:00 2048-01-16 00:00:00 2048-01-26 12:00:00 2048-02-06 00:00:00 2048-02-16 00:00:00 2048-02-25 00:00:00 2048-03-06 00:00:00 2048-03-16 00:00:00 2048-03-26 12:00:00 2048-04-06 00:00:00 2048-04-16 00:00:00 2048-04-26 00:00:00 2048-05-06 00:00:00 2048-05-16 00:00:00 2048-05-26 12:00:00 2048-06-06 00:00:00 2048-06-16 00:00:00 2048-06-26 00:00:00 2048-07-06 00:00:00 2048-07-16 00:00:00 2048-07-26 12:00:00 2048-08-06 00:00:00 2048-08-16 00:00:00 2048-08-26 12:00:00 2048-09-06 00:00:00 2048-09-16 00:00:00 2048-09-26 00:00:00 2048-10-06 00:00:00 2048-10-16 00:00:00 2048-10-26 12:00:00 2048-11-06 00:00:00 2048-11-16 00:00:00 2048-11-26 00:00:00 2048-12-06 00:00:00 2048-12-16 00:00:00 2048-12-26 12:00:00 2049-01-06 00:00:00 2049-01-16 00:00:00 2049-01-26 12:00:00 2049-02-06 00:00:00 2049-02-16 00:00:00 2049-02-25 00:00:00 2049-03-06 00:00:00 2049-03-16 00:00:00 2049-03-26 12:00:00 2049-04-06 00:00:00 2049-04-16 00:00:00 2049-04-26 00:00:00 2049-05-06 00:00:00 2049-05-16 00:00:00 2049-05-26 12:00:00 2049-06-06 00:00:00 2049-06-16 00:00:00 2049-06-26 00:00:00 2049-07-06 00:00:00 2049-07-16 00:00:00 2049-07-26 12:00:00 2049-08-06 00:00:00 2049-08-16 00:00:00 2049-08-26 12:00:00 2049-09-06 00:00:00 2049-09-16 00:00:00 2049-09-26 00:00:00 2049-10-06 00:00:00 2049-10-16 00:00:00 2049-10-26 12:00:00 2049-11-06 00:00:00 2049-11-16 00:00:00 2049-11-26 00:00:00 2049-12-06 00:00:00 2049-12-16 00:00:00 2049-12-26 12:00:00 2050-01-06 00:00:00 2050-01-16 00:00:00 2050-01-26 12:00:00 2050-02-06 00:00:00 2050-02-16 00:00:00 2050-02-25 00:00:00 2050-03-06 00:00:00 2050-03-16 00:00:00 2050-03-26 12:00:00 2050-04-06 00:00:00 2050-04-16 00:00:00 2050-04-26 00:00:00 2050-05-06 00:00:00 2050-05-16 00:00:00 2050-05-26 12:00:00 2050-06-06 00:00:00 2050-06-16 00:00:00 2050-06-26 00:00:00 2050-07-06 00:00:00 2050-07-16 00:00:00 2050-07-26 12:00:00 2050-08-06 00:00:00 2050-08-16 00:00:00 2050-08-26 12:00:00 2050-09-06 00:00:00 2050-09-16 00:00:00 2050-09-26 00:00:00 2050-10-06 00:00:00 2050-10-16 00:00:00 2050-10-26 12:00:00 2050-11-06 00:00:00 2050-11-16 00:00:00 2050-11-26 00:00:00 2050-12-06 00:00:00 2050-12-16 00:00:00 2050-12-26 12:00:00 2051-01-06 00:00:00 2051-01-16 00:00:00 2051-01-26 12:00:00 2051-02-06 00:00:00 2051-02-16 00:00:00 2051-02-25 00:00:00 2051-03-06 00:00:00 2051-03-16 00:00:00 2051-03-26 12:00:00 2051-04-06 00:00:00 2051-04-16 00:00:00 2051-04-26 00:00:00 2051-05-06 00:00:00 2051-05-16 00:00:00 2051-05-26 12:00:00 2051-06-06 00:00:00 2051-06-16 00:00:00 2051-06-26 00:00:00 2051-07-06 00:00:00 2051-07-16 00:00:00 2051-07-26 12:00:00 2051-08-06 00:00:00 2051-08-16 00:00:00 2051-08-26 12:00:00 2051-09-06 00:00:00 2051-09-16 00:00:00 2051-09-26 00:00:00 2051-10-06 00:00:00 2051-10-16 00:00:00 2051-10-26 12:00:00 2051-11-06 00:00:00 2051-11-16 00:00:00 2051-11-26 00:00:00 2051-12-06 00:00:00 2051-12-16 00:00:00 2051-12-26 12:00:00 2052-01-06 00:00:00 2052-01-16 00:00:00 2052-01-26 12:00:00 2052-02-06 00:00:00 2052-02-16 00:00:00 2052-02-25 00:00:00 2052-03-06 00:00:00 2052-03-16 00:00:00 2052-03-26 12:00:00 2052-04-06 00:00:00 2052-04-16 00:00:00 2052-04-26 00:00:00 2052-05-06 00:00:00 2052-05-16 00:00:00 2052-05-26 12:00:00 2052-06-06 00:00:00 2052-06-16 00:00:00 2052-06-26 00:00:00 2052-07-06 00:00:00 2052-07-16 00:00:00 2052-07-26 12:00:00 2052-08-06 00:00:00 2052-08-16 00:00:00 2052-08-26 12:00:00 2052-09-06 00:00:00 2052-09-16 00:00:00 2052-09-26 00:00:00 2052-10-06 00:00:00 2052-10-16 00:00:00 2052-10-26 12:00:00 2052-11-06 00:00:00 2052-11-16 00:00:00 2052-11-26 00:00:00 2052-12-06 00:00:00 2052-12-16 00:00:00 2052-12-26 12:00:00 2053-01-06 00:00:00 2053-01-16 00:00:00 2053-01-26 12:00:00 2053-02-06 00:00:00 2053-02-16 00:00:00 2053-02-25 00:00:00 2053-03-06 00:00:00 2053-03-16 00:00:00 2053-03-26 12:00:00 2053-04-06 00:00:00 2053-04-16 00:00:00 2053-04-26 00:00:00 2053-05-06 00:00:00 2053-05-16 00:00:00 2053-05-26 12:00:00 2053-06-06 00:00:00 2053-06-16 00:00:00 2053-06-26 00:00:00 2053-07-06 00:00:00 2053-07-16 00:00:00 2053-07-26 12:00:00 2053-08-06 00:00:00 2053-08-16 00:00:00 2053-08-26 12:00:00 2053-09-06 00:00:00 2053-09-16 00:00:00 2053-09-26 00:00:00 2053-10-06 00:00:00 2053-10-16 00:00:00 2053-10-26 12:00:00 2053-11-06 00:00:00 2053-11-16 00:00:00 2053-11-26 00:00:00 2053-12-06 00:00:00 2053-12-16 00:00:00 2053-12-26 12:00:00 2054-01-06 00:00:00 2054-01-16 00:00:00 2054-01-26 12:00:00 2054-02-06 00:00:00 2054-02-16 00:00:00 2054-02-25 00:00:00 2054-03-06 00:00:00 2054-03-16 00:00:00 2054-03-26 12:00:00 2054-04-06 00:00:00 2054-04-16 00:00:00 2054-04-26 00:00:00 2054-05-06 00:00:00 2054-05-16 00:00:00 2054-05-26 12:00:00 2054-06-06 00:00:00 2054-06-16 00:00:00 2054-06-26 00:00:00 2054-07-06 00:00:00 2054-07-16 00:00:00 2054-07-26 12:00:00 2054-08-06 00:00:00 2054-08-16 00:00:00 2054-08-26 12:00:00 2054-09-06 00:00:00 2054-09-16 00:00:00 2054-09-26 00:00:00 2054-10-06 00:00:00 2054-10-16 00:00:00 2054-10-26 12:00:00 2054-11-06 00:00:00 2054-11-16 00:00:00 2054-11-26 00:00:00 2054-12-06 00:00:00 2054-12-16 00:00:00 2054-12-26 12:00:00 2055-01-06 00:00:00 2055-01-16 00:00:00 2055-01-26 12:00:00 2055-02-06 00:00:00 2055-02-16 00:00:00 2055-02-25 00:00:00 2055-03-06 00:00:00 2055-03-16 00:00:00 2055-03-26 12:00:00 2055-04-06 00:00:00 2055-04-16 00:00:00 2055-04-26 00:00:00 2055-05-06 00:00:00 2055-05-16 00:00:00 2055-05-26 12:00:00 2055-06-06 00:00:00 2055-06-16 00:00:00 2055-06-26 00:00:00 2055-07-06 00:00:00 2055-07-16 00:00:00 2055-07-26 12:00:00 2055-08-06 00:00:00 2055-08-16 00:00:00 2055-08-26 12:00:00 2055-09-06 00:00:00 2055-09-16 00:00:00 2055-09-26 00:00:00 2055-10-06 00:00:00 2055-10-16 00:00:00 2055-10-26 12:00:00 2055-11-06 00:00:00 2055-11-16 00:00:00 2055-11-26 00:00:00 2055-12-06 00:00:00 2055-12-16 00:00:00 2055-12-26 12:00:00 2056-01-06 00:00:00 2056-01-16 00:00:00 2056-01-26 12:00:00 2056-02-06 00:00:00 2056-02-16 00:00:00 2056-02-25 00:00:00 2056-03-06 00:00:00 2056-03-16 00:00:00 2056-03-26 12:00:00 2056-04-06 00:00:00 2056-04-16 00:00:00 2056-04-26 00:00:00 2056-05-06 00:00:00 2056-05-16 00:00:00 2056-05-26 12:00:00 2056-06-06 00:00:00 2056-06-16 00:00:00 2056-06-26 00:00:00 2056-07-06 00:00:00 2056-07-16 00:00:00 2056-07-26 12:00:00 2056-08-06 00:00:00 2056-08-16 00:00:00 2056-08-26 12:00:00 2056-09-06 00:00:00 2056-09-16 00:00:00 2056-09-26 00:00:00 2056-10-06 00:00:00 2056-10-16 00:00:00 2056-10-26 12:00:00 2056-11-06 00:00:00 2056-11-16 00:00:00 2056-11-26 00:00:00 2056-12-06 00:00:00 2056-12-16 00:00:00 2056-12-26 12:00:00 2057-01-06 00:00:00 2057-01-16 00:00:00 2057-01-26 12:00:00 2057-02-06 00:00:00 2057-02-16 00:00:00 2057-02-25 00:00:00 2057-03-06 00:00:00 2057-03-16 00:00:00 2057-03-26 12:00:00 2057-04-06 00:00:00 2057-04-16 00:00:00 2057-04-26 00:00:00 2057-05-06 00:00:00 2057-05-16 00:00:00 2057-05-26 12:00:00 2057-06-06 00:00:00 2057-06-16 00:00:00 2057-06-26 00:00:00 2057-07-06 00:00:00 2057-07-16 00:00:00 2057-07-26 12:00:00 2057-08-06 00:00:00 2057-08-16 00:00:00 2057-08-26 12:00:00 2057-09-06 00:00:00 2057-09-16 00:00:00 2057-09-26 00:00:00 2057-10-06 00:00:00 2057-10-16 00:00:00 2057-10-26 12:00:00 2057-11-06 00:00:00 2057-11-16 00:00:00 2057-11-26 00:00:00 2057-12-06 00:00:00 2057-12-16 00:00:00 2057-12-26 12:00:00 2058-01-06 00:00:00 2058-01-16 00:00:00 2058-01-26 12:00:00 2058-02-06 00:00:00 2058-02-16 00:00:00 2058-02-25 00:00:00 2058-03-06 00:00:00 2058-03-16 00:00:00 2058-03-26 12:00:00 2058-04-06 00:00:00 2058-04-16 00:00:00 2058-04-26 00:00:00 2058-05-06 00:00:00 2058-05-16 00:00:00 2058-05-26 12:00:00 2058-06-06 00:00:00 2058-06-16 00:00:00 2058-06-26 00:00:00 2058-07-06 00:00:00 2058-07-16 00:00:00 2058-07-26 12:00:00 2058-08-06 00:00:00 2058-08-16 00:00:00 2058-08-26 12:00:00 2058-09-06 00:00:00 2058-09-16 00:00:00 2058-09-26 00:00:00 2058-10-06 00:00:00 2058-10-16 00:00:00 2058-10-26 12:00:00 2058-11-06 00:00:00 2058-11-16 00:00:00 2058-11-26 00:00:00 2058-12-06 00:00:00 2058-12-16 00:00:00 2058-12-26 12:00:00 2059-01-06 00:00:00 2059-01-16 00:00:00 2059-01-26 12:00:00 2059-02-06 00:00:00 2059-02-16 00:00:00 2059-02-25 00:00:00 2059-03-06 00:00:00 2059-03-16 00:00:00 2059-03-26 12:00:00 2059-04-06 00:00:00 2059-04-16 00:00:00 2059-04-26 00:00:00 2059-05-06 00:00:00 2059-05-16 00:00:00 2059-05-26 12:00:00 2059-06-06 00:00:00 2059-06-16 00:00:00 2059-06-26 00:00:00 2059-07-06 00:00:00 2059-07-16 00:00:00 2059-07-26 12:00:00 2059-08-06 00:00:00 2059-08-16 00:00:00 2059-08-26 12:00:00 2059-09-06 00:00:00 2059-09-16 00:00:00 2059-09-26 00:00:00 2059-10-06 00:00:00 2059-10-16 00:00:00 2059-10-26 12:00:00 2059-11-06 00:00:00 2059-11-16 00:00:00 2059-11-26 00:00:00 2059-12-06 00:00:00 2059-12-16 00:00:00 2059-12-26 12:00:00 2060-01-06 00:00:00 2060-01-16 00:00:00 2060-01-26 12:00:00 2060-02-06 00:00:00 2060-02-16 00:00:00 2060-02-25 00:00:00 2060-03-06 00:00:00 2060-03-16 00:00:00 2060-03-26 12:00:00 2060-04-06 00:00:00 2060-04-16 00:00:00 2060-04-26 00:00:00 2060-05-06 00:00:00 2060-05-16 00:00:00 2060-05-26 12:00:00 2060-06-06 00:00:00 2060-06-16 00:00:00 2060-06-26 00:00:00 2060-07-06 00:00:00 2060-07-16 00:00:00 2060-07-26 12:00:00 2060-08-06 00:00:00 2060-08-16 00:00:00 2060-08-26 12:00:00 2060-09-06 00:00:00 2060-09-16 00:00:00 2060-09-26 00:00:00 2060-10-06 00:00:00 2060-10-16 00:00:00 2060-10-26 12:00:00 2060-11-06 00:00:00 2060-11-16 00:00:00 2060-11-26 00:00:00 2060-12-06 00:00:00 2060-12-16 00:00:00 2060-12-26 12:00:00 2061-01-06 00:00:00 2061-01-16 00:00:00 2061-01-26 12:00:00 2061-02-06 00:00:00 2061-02-16 00:00:00 2061-02-25 00:00:00 2061-03-06 00:00:00 2061-03-16 00:00:00 2061-03-26 12:00:00 2061-04-06 00:00:00 2061-04-16 00:00:00 2061-04-26 00:00:00 2061-05-06 00:00:00 2061-05-16 00:00:00 2061-05-26 12:00:00 2061-06-06 00:00:00 2061-06-16 00:00:00 2061-06-26 00:00:00 2061-07-06 00:00:00 2061-07-16 00:00:00 2061-07-26 12:00:00 2061-08-06 00:00:00 2061-08-16 00:00:00 2061-08-26 12:00:00 2061-09-06 00:00:00 2061-09-16 00:00:00 2061-09-26 00:00:00 2061-10-06 00:00:00 2061-10-16 00:00:00 2061-10-26 12:00:00 2061-11-06 00:00:00 2061-11-16 00:00:00 2061-11-26 00:00:00 2061-12-06 00:00:00 2061-12-16 00:00:00 2061-12-26 12:00:00 2062-01-06 00:00:00 2062-01-16 00:00:00 2062-01-26 12:00:00 2062-02-06 00:00:00 2062-02-16 00:00:00 2062-02-25 00:00:00 2062-03-06 00:00:00 2062-03-16 00:00:00 2062-03-26 12:00:00 2062-04-06 00:00:00 2062-04-16 00:00:00 2062-04-26 00:00:00 2062-05-06 00:00:00 2062-05-16 00:00:00 2062-05-26 12:00:00 2062-06-06 00:00:00 2062-06-16 00:00:00 2062-06-26 00:00:00 2062-07-06 00:00:00 2062-07-16 00:00:00 2062-07-26 12:00:00 2062-08-06 00:00:00 2062-08-16 00:00:00 2062-08-26 12:00:00 2062-09-06 00:00:00 2062-09-16 00:00:00 2062-09-26 00:00:00 2062-10-06 00:00:00 2062-10-16 00:00:00 2062-10-26 12:00:00 2062-11-06 00:00:00 2062-11-16 00:00:00 2062-11-26 00:00:00 2062-12-06 00:00:00 2062-12-16 00:00:00 2062-12-26 12:00:00 2063-01-06 00:00:00 2063-01-16 00:00:00 2063-01-26 12:00:00 2063-02-06 00:00:00 2063-02-16 00:00:00 2063-02-25 00:00:00 2063-03-06 00:00:00 2063-03-16 00:00:00 2063-03-26 12:00:00 2063-04-06 00:00:00 2063-04-16 00:00:00 2063-04-26 00:00:00 2063-05-06 00:00:00 2063-05-16 00:00:00 2063-05-26 12:00:00 2063-06-06 00:00:00 2063-06-16 00:00:00 2063-06-26 00:00:00 2063-07-06 00:00:00 2063-07-16 00:00:00 2063-07-26 12:00:00 2063-08-06 00:00:00 2063-08-16 00:00:00 2063-08-26 12:00:00 2063-09-06 00:00:00 2063-09-16 00:00:00 2063-09-26 00:00:00 2063-10-06 00:00:00 2063-10-16 00:00:00 2063-10-26 12:00:00 2063-11-06 00:00:00 2063-11-16 00:00:00 2063-11-26 00:00:00 2063-12-06 00:00:00 2063-12-16 00:00:00 2063-12-26 12:00:00 2064-01-06 00:00:00 2064-01-16 00:00:00 2064-01-26 12:00:00 2064-02-06 00:00:00 2064-02-16 00:00:00 2064-02-25 00:00:00 2064-03-06 00:00:00 2064-03-16 00:00:00 2064-03-26 12:00:00 2064-04-06 00:00:00 2064-04-16 00:00:00 2064-04-26 00:00:00 2064-05-06 00:00:00 2064-05-16 00:00:00 2064-05-26 12:00:00 2064-06-06 00:00:00 2064-06-16 00:00:00 2064-06-26 00:00:00 2064-07-06 00:00:00 2064-07-16 00:00:00 2064-07-26 12:00:00 2064-08-06 00:00:00 2064-08-16 00:00:00 2064-08-26 12:00:00 2064-09-06 00:00:00 2064-09-16 00:00:00 2064-09-26 00:00:00 2064-10-06 00:00:00 2064-10-16 00:00:00 2064-10-26 12:00:00 2064-11-06 00:00:00 2064-11-16 00:00:00 2064-11-26 00:00:00 2064-12-06 00:00:00 2064-12-16 00:00:00 2064-12-26 12:00:00 2065-01-06 00:00:00 2065-01-16 00:00:00 2065-01-26 12:00:00 2065-02-06 00:00:00 2065-02-16 00:00:00 2065-02-25 00:00:00 2065-03-06 00:00:00 2065-03-16 00:00:00 2065-03-26 12:00:00 2065-04-06 00:00:00 2065-04-16 00:00:00 2065-04-26 00:00:00 2065-05-06 00:00:00 2065-05-16 00:00:00 2065-05-26 12:00:00 2065-06-06 00:00:00 2065-06-16 00:00:00 2065-06-26 00:00:00 2065-07-06 00:00:00 2065-07-16 00:00:00 2065-07-26 12:00:00 2065-08-06 00:00:00 2065-08-16 00:00:00 2065-08-26 12:00:00 2065-09-06 00:00:00 2065-09-16 00:00:00 2065-09-26 00:00:00 2065-10-06 00:00:00 2065-10-16 00:00:00 2065-10-26 12:00:00 2065-11-06 00:00:00 2065-11-16 00:00:00 2065-11-26 00:00:00 2065-12-06 00:00:00 2065-12-16 00:00:00 2065-12-26 12:00:00 2066-01-06 00:00:00 2066-01-16 00:00:00 2066-01-26 12:00:00 2066-02-06 00:00:00 2066-02-16 00:00:00 2066-02-25 00:00:00 2066-03-06 00:00:00 2066-03-16 00:00:00 2066-03-26 12:00:00 2066-04-06 00:00:00 2066-04-16 00:00:00 2066-04-26 00:00:00 2066-05-06 00:00:00 2066-05-16 00:00:00 2066-05-26 12:00:00 2066-06-06 00:00:00 2066-06-16 00:00:00 2066-06-26 00:00:00 2066-07-06 00:00:00 2066-07-16 00:00:00 2066-07-26 12:00:00 2066-08-06 00:00:00 2066-08-16 00:00:00 2066-08-26 12:00:00 2066-09-06 00:00:00 2066-09-16 00:00:00 2066-09-26 00:00:00 2066-10-06 00:00:00 2066-10-16 00:00:00 2066-10-26 12:00:00 2066-11-06 00:00:00 2066-11-16 00:00:00 2066-11-26 00:00:00 2066-12-06 00:00:00 2066-12-16 00:00:00 2066-12-26 12:00:00 2067-01-06 00:00:00 2067-01-16 00:00:00 2067-01-26 12:00:00 2067-02-06 00:00:00 2067-02-16 00:00:00 2067-02-25 00:00:00 2067-03-06 00:00:00 2067-03-16 00:00:00 2067-03-26 12:00:00 2067-04-06 00:00:00 2067-04-16 00:00:00 2067-04-26 00:00:00 2067-05-06 00:00:00 2067-05-16 00:00:00 2067-05-26 12:00:00 2067-06-06 00:00:00 2067-06-16 00:00:00 2067-06-26 00:00:00 2067-07-06 00:00:00 2067-07-16 00:00:00 2067-07-26 12:00:00 2067-08-06 00:00:00 2067-08-16 00:00:00 2067-08-26 12:00:00 2067-09-06 00:00:00 2067-09-16 00:00:00 2067-09-26 00:00:00 2067-10-06 00:00:00 2067-10-16 00:00:00 2067-10-26 12:00:00 2067-11-06 00:00:00 2067-11-16 00:00:00 2067-11-26 00:00:00 2067-12-06 00:00:00 2067-12-16 00:00:00 2067-12-26 12:00:00 2068-01-06 00:00:00 2068-01-16 00:00:00 2068-01-26 12:00:00 2068-02-06 00:00:00 2068-02-16 00:00:00 2068-02-25 00:00:00 2068-03-06 00:00:00 2068-03-16 00:00:00 2068-03-26 12:00:00 2068-04-06 00:00:00 2068-04-16 00:00:00 2068-04-26 00:00:00 2068-05-06 00:00:00 2068-05-16 00:00:00 2068-05-26 12:00:00 2068-06-06 00:00:00 2068-06-16 00:00:00 2068-06-26 00:00:00 2068-07-06 00:00:00 2068-07-16 00:00:00 2068-07-26 12:00:00 2068-08-06 00:00:00 2068-08-16 00:00:00 2068-08-26 12:00:00 2068-09-06 00:00:00 2068-09-16 00:00:00 2068-09-26 00:00:00 2068-10-06 00:00:00 2068-10-16 00:00:00 2068-10-26 12:00:00 2068-11-06 00:00:00 2068-11-16 00:00:00 2068-11-26 00:00:00 2068-12-06 00:00:00 2068-12-16 00:00:00 2068-12-26 12:00:00 2069-01-06 00:00:00 2069-01-16 00:00:00 2069-01-26 12:00:00 2069-02-06 00:00:00 2069-02-16 00:00:00 2069-02-25 00:00:00 2069-03-06 00:00:00 2069-03-16 00:00:00 2069-03-26 12:00:00 2069-04-06 00:00:00 2069-04-16 00:00:00 2069-04-26 00:00:00 2069-05-06 00:00:00 2069-05-16 00:00:00 2069-05-26 12:00:00 2069-06-06 00:00:00 2069-06-16 00:00:00 2069-06-26 00:00:00 2069-07-06 00:00:00 2069-07-16 00:00:00 2069-07-26 12:00:00 2069-08-06 00:00:00 2069-08-16 00:00:00 2069-08-26 12:00:00 2069-09-06 00:00:00 2069-09-16 00:00:00 2069-09-26 00:00:00 2069-10-06 00:00:00 2069-10-16 00:00:00 2069-10-26 12:00:00 2069-11-06 00:00:00 2069-11-16 00:00:00 2069-11-26 00:00:00 2069-12-06 00:00:00 2069-12-16 00:00:00 2069-12-26 12:00:00 2070-01-06 00:00:00 2070-01-16 00:00:00 2070-01-26 12:00:00 2070-02-06 00:00:00 2070-02-16 00:00:00 2070-02-25 00:00:00 2070-03-06 00:00:00 2070-03-16 00:00:00 2070-03-26 12:00:00 2070-04-06 00:00:00 2070-04-16 00:00:00 2070-04-26 00:00:00 2070-05-06 00:00:00 2070-05-16 00:00:00 2070-05-26 12:00:00 2070-06-06 00:00:00 2070-06-16 00:00:00 2070-06-26 00:00:00 2070-07-06 00:00:00 2070-07-16 00:00:00 2070-07-26 12:00:00 2070-08-06 00:00:00 2070-08-16 00:00:00 2070-08-26 12:00:00 2070-09-06 00:00:00 2070-09-16 00:00:00 2070-09-26 00:00:00 2070-10-06 00:00:00 2070-10-16 00:00:00 2070-10-26 12:00:00 2070-11-06 00:00:00 2070-11-16 00:00:00 2070-11-26 00:00:00 2070-12-06 00:00:00 2070-12-16 00:00:00 2070-12-26 12:00:00 2071-01-06 00:00:00 2071-01-16 00:00:00 2071-01-26 12:00:00 2071-02-06 00:00:00 2071-02-16 00:00:00 2071-02-25 00:00:00 2071-03-06 00:00:00 2071-03-16 00:00:00 2071-03-26 12:00:00 2071-04-06 00:00:00 2071-04-16 00:00:00 2071-04-26 00:00:00 2071-05-06 00:00:00 2071-05-16 00:00:00 2071-05-26 12:00:00 2071-06-06 00:00:00 2071-06-16 00:00:00 2071-06-26 00:00:00 2071-07-06 00:00:00 2071-07-16 00:00:00 2071-07-26 12:00:00 2071-08-06 00:00:00 2071-08-16 00:00:00 2071-08-26 12:00:00 2071-09-06 00:00:00 2071-09-16 00:00:00 2071-09-26 00:00:00 2071-10-06 00:00:00 2071-10-16 00:00:00 2071-10-26 12:00:00 2071-11-06 00:00:00 2071-11-16 00:00:00 2071-11-26 00:00:00 2071-12-06 00:00:00 2071-12-16 00:00:00 2071-12-26 12:00:00 2072-01-06 00:00:00 2072-01-16 00:00:00 2072-01-26 12:00:00 2072-02-06 00:00:00 2072-02-16 00:00:00 2072-02-25 00:00:00 2072-03-06 00:00:00 2072-03-16 00:00:00 2072-03-26 12:00:00 2072-04-06 00:00:00 2072-04-16 00:00:00 2072-04-26 00:00:00 2072-05-06 00:00:00 2072-05-16 00:00:00 2072-05-26 12:00:00 2072-06-06 00:00:00 2072-06-16 00:00:00 2072-06-26 00:00:00 2072-07-06 00:00:00 2072-07-16 00:00:00 2072-07-26 12:00:00 2072-08-06 00:00:00 2072-08-16 00:00:00 2072-08-26 12:00:00 2072-09-06 00:00:00 2072-09-16 00:00:00 2072-09-26 00:00:00 2072-10-06 00:00:00 2072-10-16 00:00:00 2072-10-26 12:00:00 2072-11-06 00:00:00 2072-11-16 00:00:00 2072-11-26 00:00:00 2072-12-06 00:00:00 2072-12-16 00:00:00 2072-12-26 12:00:00 2073-01-06 00:00:00 2073-01-16 00:00:00 2073-01-26 12:00:00 2073-02-06 00:00:00 2073-02-16 00:00:00 2073-02-25 00:00:00 2073-03-06 00:00:00 2073-03-16 00:00:00 2073-03-26 12:00:00 2073-04-06 00:00:00 2073-04-16 00:00:00 2073-04-26 00:00:00 2073-05-06 00:00:00 2073-05-16 00:00:00 2073-05-26 12:00:00 2073-06-06 00:00:00 2073-06-16 00:00:00 2073-06-26 00:00:00 2073-07-06 00:00:00 2073-07-16 00:00:00 2073-07-26 12:00:00 2073-08-06 00:00:00 2073-08-16 00:00:00 2073-08-26 12:00:00 2073-09-06 00:00:00 2073-09-16 00:00:00 2073-09-26 00:00:00 2073-10-06 00:00:00 2073-10-16 00:00:00 2073-10-26 12:00:00 2073-11-06 00:00:00 2073-11-16 00:00:00 2073-11-26 00:00:00 2073-12-06 00:00:00 2073-12-16 00:00:00 2073-12-26 12:00:00 2074-01-06 00:00:00 2074-01-16 00:00:00 2074-01-26 12:00:00 2074-02-06 00:00:00 2074-02-16 00:00:00 2074-02-25 00:00:00 2074-03-06 00:00:00 2074-03-16 00:00:00 2074-03-26 12:00:00 2074-04-06 00:00:00 2074-04-16 00:00:00 2074-04-26 00:00:00 2074-05-06 00:00:00 2074-05-16 00:00:00 2074-05-26 12:00:00 2074-06-06 00:00:00 2074-06-16 00:00:00 2074-06-26 00:00:00 2074-07-06 00:00:00 2074-07-16 00:00:00 2074-07-26 12:00:00 2074-08-06 00:00:00 2074-08-16 00:00:00 2074-08-26 12:00:00 2074-09-06 00:00:00 2074-09-16 00:00:00 2074-09-26 00:00:00 2074-10-06 00:00:00 2074-10-16 00:00:00 2074-10-26 12:00:00 2074-11-06 00:00:00 2074-11-16 00:00:00 2074-11-26 00:00:00 2074-12-06 00:00:00 2074-12-16 00:00:00 2074-12-26 12:00:00 2075-01-06 00:00:00 2075-01-16 00:00:00 2075-01-26 12:00:00 2075-02-06 00:00:00 2075-02-16 00:00:00 2075-02-25 00:00:00 2075-03-06 00:00:00 2075-03-16 00:00:00 2075-03-26 12:00:00 2075-04-06 00:00:00 2075-04-16 00:00:00 2075-04-26 00:00:00 2075-05-06 00:00:00 2075-05-16 00:00:00 2075-05-26 12:00:00 2075-06-06 00:00:00 2075-06-16 00:00:00 2075-06-26 00:00:00 2075-07-06 00:00:00 2075-07-16 00:00:00 2075-07-26 12:00:00 2075-08-06 00:00:00 2075-08-16 00:00:00 2075-08-26 12:00:00 2075-09-06 00:00:00 2075-09-16 00:00:00 2075-09-26 00:00:00 2075-10-06 00:00:00 2075-10-16 00:00:00 2075-10-26 12:00:00 2075-11-06 00:00:00 2075-11-16 00:00:00 2075-11-26 00:00:00 2075-12-06 00:00:00 2075-12-16 00:00:00 2075-12-26 12:00:00 2076-01-06 00:00:00 2076-01-16 00:00:00 2076-01-26 12:00:00 2076-02-06 00:00:00 2076-02-16 00:00:00 2076-02-25 00:00:00 2076-03-06 00:00:00 2076-03-16 00:00:00 2076-03-26 12:00:00 2076-04-06 00:00:00 2076-04-16 00:00:00 2076-04-26 00:00:00 2076-05-06 00:00:00 2076-05-16 00:00:00 2076-05-26 12:00:00 2076-06-06 00:00:00 2076-06-16 00:00:00 2076-06-26 00:00:00 2076-07-06 00:00:00 2076-07-16 00:00:00 2076-07-26 12:00:00 2076-08-06 00:00:00 2076-08-16 00:00:00 2076-08-26 12:00:00 2076-09-06 00:00:00 2076-09-16 00:00:00 2076-09-26 00:00:00 2076-10-06 00:00:00 2076-10-16 00:00:00 2076-10-26 12:00:00 2076-11-06 00:00:00 2076-11-16 00:00:00 2076-11-26 00:00:00 2076-12-06 00:00:00 2076-12-16 00:00:00 2076-12-26 12:00:00 2077-01-06 00:00:00 2077-01-16 00:00:00 2077-01-26 12:00:00 2077-02-06 00:00:00 2077-02-16 00:00:00 2077-02-25 00:00:00 2077-03-06 00:00:00 2077-03-16 00:00:00 2077-03-26 12:00:00 2077-04-06 00:00:00 2077-04-16 00:00:00 2077-04-26 00:00:00 2077-05-06 00:00:00 2077-05-16 00:00:00 2077-05-26 12:00:00 2077-06-06 00:00:00 2077-06-16 00:00:00 2077-06-26 00:00:00 2077-07-06 00:00:00 2077-07-16 00:00:00 2077-07-26 12:00:00 2077-08-06 00:00:00 2077-08-16 00:00:00 2077-08-26 12:00:00 2077-09-06 00:00:00 2077-09-16 00:00:00 2077-09-26 00:00:00 2077-10-06 00:00:00 2077-10-16 00:00:00 2077-10-26 12:00:00 2077-11-06 00:00:00 2077-11-16 00:00:00 2077-11-26 00:00:00 2077-12-06 00:00:00 2077-12-16 00:00:00 2077-12-26 12:00:00 2078-01-06 00:00:00 2078-01-16 00:00:00 2078-01-26 12:00:00 2078-02-06 00:00:00 2078-02-16 00:00:00 2078-02-25 00:00:00 2078-03-06 00:00:00 2078-03-16 00:00:00 2078-03-26 12:00:00 2078-04-06 00:00:00 2078-04-16 00:00:00 2078-04-26 00:00:00 2078-05-06 00:00:00 2078-05-16 00:00:00 2078-05-26 12:00:00 2078-06-06 00:00:00 2078-06-16 00:00:00 2078-06-26 00:00:00 2078-07-06 00:00:00 2078-07-16 00:00:00 2078-07-26 12:00:00 2078-08-06 00:00:00 2078-08-16 00:00:00 2078-08-26 12:00:00 2078-09-06 00:00:00 2078-09-16 00:00:00 2078-09-26 00:00:00 2078-10-06 00:00:00 2078-10-16 00:00:00 2078-10-26 12:00:00 2078-11-06 00:00:00 2078-11-16 00:00:00 2078-11-26 00:00:00 2078-12-06 00:00:00 2078-12-16 00:00:00 2078-12-26 12:00:00 2079-01-06 00:00:00 2079-01-16 00:00:00 2079-01-26 12:00:00 2079-02-06 00:00:00 2079-02-16 00:00:00 2079-02-25 00:00:00 2079-03-06 00:00:00 2079-03-16 00:00:00 2079-03-26 12:00:00 2079-04-06 00:00:00 2079-04-16 00:00:00 2079-04-26 00:00:00 2079-05-06 00:00:00 2079-05-16 00:00:00 2079-05-26 12:00:00 2079-06-06 00:00:00 2079-06-16 00:00:00 2079-06-26 00:00:00 2079-07-06 00:00:00 2079-07-16 00:00:00 2079-07-26 12:00:00 2079-08-06 00:00:00 2079-08-16 00:00:00 2079-08-26 12:00:00 2079-09-06 00:00:00 2079-09-16 00:00:00 2079-09-26 00:00:00 2079-10-06 00:00:00 2079-10-16 00:00:00 2079-10-26 12:00:00 2079-11-06 00:00:00 2079-11-16 00:00:00 2079-11-26 00:00:00 2079-12-06 00:00:00 2079-12-16 00:00:00 2079-12-26 12:00:00 2080-01-06 00:00:00 2080-01-16 00:00:00 2080-01-26 12:00:00 2080-02-06 00:00:00 2080-02-16 00:00:00 2080-02-25 00:00:00 2080-03-06 00:00:00 2080-03-16 00:00:00 2080-03-26 12:00:00 2080-04-06 00:00:00 2080-04-16 00:00:00 2080-04-26 00:00:00 2080-05-06 00:00:00 2080-05-16 00:00:00 2080-05-26 12:00:00 2080-06-06 00:00:00 2080-06-16 00:00:00 2080-06-26 00:00:00 2080-07-06 00:00:00 2080-07-16 00:00:00 2080-07-26 12:00:00 2080-08-06 00:00:00 2080-08-16 00:00:00 2080-08-26 12:00:00 2080-09-06 00:00:00 2080-09-16 00:00:00 2080-09-26 00:00:00 2080-10-06 00:00:00 2080-10-16 00:00:00 2080-10-26 12:00:00 2080-11-06 00:00:00 2080-11-16 00:00:00 2080-11-26 00:00:00 2080-12-06 00:00:00 2080-12-16 00:00:00 2080-12-26 12:00:00 2081-01-06 00:00:00 2081-01-16 00:00:00 2081-01-26 12:00:00 2081-02-06 00:00:00 2081-02-16 00:00:00 2081-02-25 00:00:00 2081-03-06 00:00:00 2081-03-16 00:00:00 2081-03-26 12:00:00 2081-04-06 00:00:00 2081-04-16 00:00:00 2081-04-26 00:00:00 2081-05-06 00:00:00 2081-05-16 00:00:00 2081-05-26 12:00:00 2081-06-06 00:00:00 2081-06-16 00:00:00 2081-06-26 00:00:00 2081-07-06 00:00:00 2081-07-16 00:00:00 2081-07-26 12:00:00 2081-08-06 00:00:00 2081-08-16 00:00:00 2081-08-26 12:00:00 2081-09-06 00:00:00 2081-09-16 00:00:00 2081-09-26 00:00:00 2081-10-06 00:00:00 2081-10-16 00:00:00 2081-10-26 12:00:00 2081-11-06 00:00:00 2081-11-16 00:00:00 2081-11-26 00:00:00 2081-12-06 00:00:00 2081-12-16 00:00:00 2081-12-26 12:00:00 2082-01-06 00:00:00 2082-01-16 00:00:00 2082-01-26 12:00:00 2082-02-06 00:00:00 2082-02-16 00:00:00 2082-02-25 00:00:00 2082-03-06 00:00:00 2082-03-16 00:00:00 2082-03-26 12:00:00 2082-04-06 00:00:00 2082-04-16 00:00:00 2082-04-26 00:00:00 2082-05-06 00:00:00 2082-05-16 00:00:00 2082-05-26 12:00:00 2082-06-06 00:00:00 2082-06-16 00:00:00 2082-06-26 00:00:00 2082-07-06 00:00:00 2082-07-16 00:00:00 2082-07-26 12:00:00 2082-08-06 00:00:00 2082-08-16 00:00:00 2082-08-26 12:00:00 2082-09-06 00:00:00 2082-09-16 00:00:00 2082-09-26 00:00:00 2082-10-06 00:00:00 2082-10-16 00:00:00 2082-10-26 12:00:00 2082-11-06 00:00:00 2082-11-16 00:00:00 2082-11-26 00:00:00 2082-12-06 00:00:00 2082-12-16 00:00:00 2082-12-26 12:00:00 2083-01-06 00:00:00 2083-01-16 00:00:00 2083-01-26 12:00:00 2083-02-06 00:00:00 2083-02-16 00:00:00 2083-02-25 00:00:00 2083-03-06 00:00:00 2083-03-16 00:00:00 2083-03-26 12:00:00 2083-04-06 00:00:00 2083-04-16 00:00:00 2083-04-26 00:00:00 2083-05-06 00:00:00 2083-05-16 00:00:00 2083-05-26 12:00:00 2083-06-06 00:00:00 2083-06-16 00:00:00 2083-06-26 00:00:00 2083-07-06 00:00:00 2083-07-16 00:00:00 2083-07-26 12:00:00 2083-08-06 00:00:00 2083-08-16 00:00:00 2083-08-26 12:00:00 2083-09-06 00:00:00 2083-09-16 00:00:00 2083-09-26 00:00:00 2083-10-06 00:00:00 2083-10-16 00:00:00 2083-10-26 12:00:00 2083-11-06 00:00:00 2083-11-16 00:00:00 2083-11-26 00:00:00 2083-12-06 00:00:00 2083-12-16 00:00:00 2083-12-26 12:00:00 2084-01-06 00:00:00 2084-01-16 00:00:00 2084-01-26 12:00:00 2084-02-06 00:00:00 2084-02-16 00:00:00 2084-02-25 00:00:00 2084-03-06 00:00:00 2084-03-16 00:00:00 2084-03-26 12:00:00 2084-04-06 00:00:00 2084-04-16 00:00:00 2084-04-26 00:00:00 2084-05-06 00:00:00 2084-05-16 00:00:00 2084-05-26 12:00:00 2084-06-06 00:00:00 2084-06-16 00:00:00 2084-06-26 00:00:00 2084-07-06 00:00:00 2084-07-16 00:00:00 2084-07-26 12:00:00 2084-08-06 00:00:00 2084-08-16 00:00:00 2084-08-26 12:00:00 2084-09-06 00:00:00 2084-09-16 00:00:00 2084-09-26 00:00:00 2084-10-06 00:00:00 2084-10-16 00:00:00 2084-10-26 12:00:00 2084-11-06 00:00:00 2084-11-16 00:00:00 2084-11-26 00:00:00 2084-12-06 00:00:00 2084-12-16 00:00:00 2084-12-26 12:00:00 2085-01-06 00:00:00 2085-01-16 00:00:00 2085-01-26 12:00:00 2085-02-06 00:00:00 2085-02-16 00:00:00 2085-02-25 00:00:00 2085-03-06 00:00:00 2085-03-16 00:00:00 2085-03-26 12:00:00 2085-04-06 00:00:00 2085-04-16 00:00:00 2085-04-26 00:00:00 2085-05-06 00:00:00 2085-05-16 00:00:00 2085-05-26 12:00:00 2085-06-06 00:00:00 2085-06-16 00:00:00 2085-06-26 00:00:00 2085-07-06 00:00:00 2085-07-16 00:00:00 2085-07-26 12:00:00 2085-08-06 00:00:00 2085-08-16 00:00:00 2085-08-26 12:00:00 2085-09-06 00:00:00 2085-09-16 00:00:00 2085-09-26 00:00:00 2085-10-06 00:00:00 2085-10-16 00:00:00 2085-10-26 12:00:00 2085-11-06 00:00:00 2085-11-16 00:00:00 2085-11-26 00:00:00 2085-12-06 00:00:00 2085-12-16 00:00:00 2085-12-26 12:00:00 2086-01-06 00:00:00 2086-01-16 00:00:00 2086-01-26 12:00:00 2086-02-06 00:00:00 2086-02-16 00:00:00 2086-02-25 00:00:00 2086-03-06 00:00:00 2086-03-16 00:00:00 2086-03-26 12:00:00 2086-04-06 00:00:00 2086-04-16 00:00:00 2086-04-26 00:00:00 2086-05-06 00:00:00 2086-05-16 00:00:00 2086-05-26 12:00:00 2086-06-06 00:00:00 2086-06-16 00:00:00 2086-06-26 00:00:00 2086-07-06 00:00:00 2086-07-16 00:00:00 2086-07-26 12:00:00 2086-08-06 00:00:00 2086-08-16 00:00:00 2086-08-26 12:00:00 2086-09-06 00:00:00 2086-09-16 00:00:00 2086-09-26 00:00:00 2086-10-06 00:00:00 2086-10-16 00:00:00 2086-10-26 12:00:00 2086-11-06 00:00:00 2086-11-16 00:00:00 2086-11-26 00:00:00 2086-12-06 00:00:00 2086-12-16 00:00:00 2086-12-26 12:00:00 2087-01-06 00:00:00 2087-01-16 00:00:00 2087-01-26 12:00:00 2087-02-06 00:00:00 2087-02-16 00:00:00 2087-02-25 00:00:00 2087-03-06 00:00:00 2087-03-16 00:00:00 2087-03-26 12:00:00 2087-04-06 00:00:00 2087-04-16 00:00:00 2087-04-26 00:00:00 2087-05-06 00:00:00 2087-05-16 00:00:00 2087-05-26 12:00:00 2087-06-06 00:00:00 2087-06-16 00:00:00 2087-06-26 00:00:00 2087-07-06 00:00:00 2087-07-16 00:00:00 2087-07-26 12:00:00 2087-08-06 00:00:00 2087-08-16 00:00:00 2087-08-26 12:00:00 2087-09-06 00:00:00 2087-09-16 00:00:00 2087-09-26 00:00:00 2087-10-06 00:00:00 2087-10-16 00:00:00 2087-10-26 12:00:00 2087-11-06 00:00:00 2087-11-16 00:00:00 2087-11-26 00:00:00 2087-12-06 00:00:00 2087-12-16 00:00:00 2087-12-26 12:00:00 2088-01-06 00:00:00 2088-01-16 00:00:00 2088-01-26 12:00:00 2088-02-06 00:00:00 2088-02-16 00:00:00 2088-02-25 00:00:00 2088-03-06 00:00:00 2088-03-16 00:00:00 2088-03-26 12:00:00 2088-04-06 00:00:00 2088-04-16 00:00:00 2088-04-26 00:00:00 2088-05-06 00:00:00 2088-05-16 00:00:00 2088-05-26 12:00:00 2088-06-06 00:00:00 2088-06-16 00:00:00 2088-06-26 00:00:00 2088-07-06 00:00:00 2088-07-16 00:00:00 2088-07-26 12:00:00 2088-08-06 00:00:00 2088-08-16 00:00:00 2088-08-26 12:00:00 2088-09-06 00:00:00 2088-09-16 00:00:00 2088-09-26 00:00:00 2088-10-06 00:00:00 2088-10-16 00:00:00 2088-10-26 12:00:00 2088-11-06 00:00:00 2088-11-16 00:00:00 2088-11-26 00:00:00 2088-12-06 00:00:00 2088-12-16 00:00:00 2088-12-26 12:00:00 2089-01-06 00:00:00 2089-01-16 00:00:00 2089-01-26 12:00:00 2089-02-06 00:00:00 2089-02-16 00:00:00 2089-02-25 00:00:00 2089-03-06 00:00:00 2089-03-16 00:00:00 2089-03-26 12:00:00 2089-04-06 00:00:00 2089-04-16 00:00:00 2089-04-26 00:00:00 2089-05-06 00:00:00 2089-05-16 00:00:00 2089-05-26 12:00:00 2089-06-06 00:00:00 2089-06-16 00:00:00 2089-06-26 00:00:00 2089-07-06 00:00:00 2089-07-16 00:00:00 2089-07-26 12:00:00 2089-08-06 00:00:00 2089-08-16 00:00:00 2089-08-26 12:00:00 2089-09-06 00:00:00 2089-09-16 00:00:00 2089-09-26 00:00:00 2089-10-06 00:00:00 2089-10-16 00:00:00 2089-10-26 12:00:00 2089-11-06 00:00:00 2089-11-16 00:00:00 2089-11-26 00:00:00 2089-12-06 00:00:00 2089-12-16 00:00:00 2089-12-26 12:00:00 2090-01-06 00:00:00 2090-01-16 00:00:00 2090-01-26 12:00:00 2090-02-06 00:00:00 2090-02-16 00:00:00 2090-02-25 00:00:00 2090-03-06 00:00:00 2090-03-16 00:00:00 2090-03-26 12:00:00 2090-04-06 00:00:00 2090-04-16 00:00:00 2090-04-26 00:00:00 2090-05-06 00:00:00 2090-05-16 00:00:00 2090-05-26 12:00:00 2090-06-06 00:00:00 2090-06-16 00:00:00 2090-06-26 00:00:00 2090-07-06 00:00:00 2090-07-16 00:00:00 2090-07-26 12:00:00 2090-08-06 00:00:00 2090-08-16 00:00:00 2090-08-26 12:00:00 2090-09-06 00:00:00 2090-09-16 00:00:00 2090-09-26 00:00:00 2090-10-06 00:00:00 2090-10-16 00:00:00 2090-10-26 12:00:00 2090-11-06 00:00:00 2090-11-16 00:00:00 2090-11-26 00:00:00 2090-12-06 00:00:00 2090-12-16 00:00:00 2090-12-26 12:00:00 2091-01-06 00:00:00 2091-01-16 00:00:00 2091-01-26 12:00:00 2091-02-06 00:00:00 2091-02-16 00:00:00 2091-02-25 00:00:00 2091-03-06 00:00:00 2091-03-16 00:00:00 2091-03-26 12:00:00 2091-04-06 00:00:00 2091-04-16 00:00:00 2091-04-26 00:00:00 2091-05-06 00:00:00 2091-05-16 00:00:00 2091-05-26 12:00:00 2091-06-06 00:00:00 2091-06-16 00:00:00 2091-06-26 00:00:00 2091-07-06 00:00:00 2091-07-16 00:00:00 2091-07-26 12:00:00 2091-08-06 00:00:00 2091-08-16 00:00:00 2091-08-26 12:00:00 2091-09-06 00:00:00 2091-09-16 00:00:00 2091-09-26 00:00:00 2091-10-06 00:00:00 2091-10-16 00:00:00 2091-10-26 12:00:00 2091-11-06 00:00:00 2091-11-16 00:00:00 2091-11-26 00:00:00 2091-12-06 00:00:00 2091-12-16 00:00:00 2091-12-26 12:00:00 2092-01-06 00:00:00 2092-01-16 00:00:00 2092-01-26 12:00:00 2092-02-06 00:00:00 2092-02-16 00:00:00 2092-02-25 00:00:00 2092-03-06 00:00:00 2092-03-16 00:00:00 2092-03-26 12:00:00 2092-04-06 00:00:00 2092-04-16 00:00:00 2092-04-26 00:00:00 2092-05-06 00:00:00 2092-05-16 00:00:00 2092-05-26 12:00:00 2092-06-06 00:00:00 2092-06-16 00:00:00 2092-06-26 00:00:00 2092-07-06 00:00:00 2092-07-16 00:00:00 2092-07-26 12:00:00 2092-08-06 00:00:00 2092-08-16 00:00:00 2092-08-26 12:00:00 2092-09-06 00:00:00 2092-09-16 00:00:00 2092-09-26 00:00:00 2092-10-06 00:00:00 2092-10-16 00:00:00 2092-10-26 12:00:00 2092-11-06 00:00:00 2092-11-16 00:00:00 2092-11-26 00:00:00 2092-12-06 00:00:00 2092-12-16 00:00:00 2092-12-26 12:00:00 2093-01-06 00:00:00 2093-01-16 00:00:00 2093-01-26 12:00:00 2093-02-06 00:00:00 2093-02-16 00:00:00 2093-02-25 00:00:00 2093-03-06 00:00:00 2093-03-16 00:00:00 2093-03-26 12:00:00 2093-04-06 00:00:00 2093-04-16 00:00:00 2093-04-26 00:00:00 2093-05-06 00:00:00 2093-05-16 00:00:00 2093-05-26 12:00:00 2093-06-06 00:00:00 2093-06-16 00:00:00 2093-06-26 00:00:00 2093-07-06 00:00:00 2093-07-16 00:00:00 2093-07-26 12:00:00 2093-08-06 00:00:00 2093-08-16 00:00:00 2093-08-26 12:00:00 2093-09-06 00:00:00 2093-09-16 00:00:00 2093-09-26 00:00:00 2093-10-06 00:00:00 2093-10-16 00:00:00 2093-10-26 12:00:00 2093-11-06 00:00:00 2093-11-16 00:00:00 2093-11-26 00:00:00 2093-12-06 00:00:00 2093-12-16 00:00:00 2093-12-26 12:00:00 2094-01-06 00:00:00 2094-01-16 00:00:00 2094-01-26 12:00:00 2094-02-06 00:00:00 2094-02-16 00:00:00 2094-02-25 00:00:00 2094-03-06 00:00:00 2094-03-16 00:00:00 2094-03-26 12:00:00 2094-04-06 00:00:00 2094-04-16 00:00:00 2094-04-26 00:00:00 2094-05-06 00:00:00 2094-05-16 00:00:00 2094-05-26 12:00:00 2094-06-06 00:00:00 2094-06-16 00:00:00 2094-06-26 00:00:00 2094-07-06 00:00:00 2094-07-16 00:00:00 2094-07-26 12:00:00 2094-08-06 00:00:00 2094-08-16 00:00:00 2094-08-26 12:00:00 2094-09-06 00:00:00 2094-09-16 00:00:00 2094-09-26 00:00:00 2094-10-06 00:00:00 2094-10-16 00:00:00 2094-10-26 12:00:00 2094-11-06 00:00:00 2094-11-16 00:00:00 2094-11-26 00:00:00 2094-12-06 00:00:00 2094-12-16 00:00:00 2094-12-26 12:00:00 2095-01-06 00:00:00 2095-01-16 00:00:00 2095-01-26 12:00:00 2095-02-06 00:00:00 2095-02-16 00:00:00 2095-02-25 00:00:00 2095-03-06 00:00:00 2095-03-16 00:00:00 2095-03-26 12:00:00 2095-04-06 00:00:00 2095-04-16 00:00:00 2095-04-26 00:00:00 2095-05-06 00:00:00 2095-05-16 00:00:00 2095-05-26 12:00:00 2095-06-06 00:00:00 2095-06-16 00:00:00 2095-06-26 00:00:00 2095-07-06 00:00:00 2095-07-16 00:00:00 2095-07-26 12:00:00 2095-08-06 00:00:00 2095-08-16 00:00:00 2095-08-26 12:00:00 2095-09-06 00:00:00 2095-09-16 00:00:00 2095-09-26 00:00:00 2095-10-06 00:00:00 2095-10-16 00:00:00 2095-10-26 12:00:00 2095-11-06 00:00:00 2095-11-16 00:00:00 2095-11-26 00:00:00 2095-12-06 00:00:00 2095-12-16 00:00:00 2095-12-26 12:00:00 2096-01-06 00:00:00 2096-01-16 00:00:00 2096-01-26 12:00:00 2096-02-06 00:00:00 2096-02-16 00:00:00 2096-02-25 00:00:00 2096-03-06 00:00:00 2096-03-16 00:00:00 2096-03-26 12:00:00 2096-04-06 00:00:00 2096-04-16 00:00:00 2096-04-26 00:00:00 2096-05-06 00:00:00 2096-05-16 00:00:00 2096-05-26 12:00:00 2096-06-06 00:00:00 2096-06-16 00:00:00 2096-06-26 00:00:00 2096-07-06 00:00:00 2096-07-16 00:00:00 2096-07-26 12:00:00 2096-08-06 00:00:00 2096-08-16 00:00:00 2096-08-26 12:00:00 2096-09-06 00:00:00 2096-09-16 00:00:00 2096-09-26 00:00:00 2096-10-06 00:00:00 2096-10-16 00:00:00 2096-10-26 12:00:00 2096-11-06 00:00:00 2096-11-16 00:00:00 2096-11-26 00:00:00 2096-12-06 00:00:00 2096-12-16 00:00:00 2096-12-26 12:00:00 2097-01-06 00:00:00 2097-01-16 00:00:00 2097-01-26 12:00:00 2097-02-06 00:00:00 2097-02-16 00:00:00 2097-02-25 00:00:00 2097-03-06 00:00:00 2097-03-16 00:00:00 2097-03-26 12:00:00 2097-04-06 00:00:00 2097-04-16 00:00:00 2097-04-26 00:00:00 2097-05-06 00:00:00 2097-05-16 00:00:00 2097-05-26 12:00:00 2097-06-06 00:00:00 2097-06-16 00:00:00 2097-06-26 00:00:00 2097-07-06 00:00:00 2097-07-16 00:00:00 2097-07-26 12:00:00 2097-08-06 00:00:00 2097-08-16 00:00:00 2097-08-26 12:00:00 2097-09-06 00:00:00 2097-09-16 00:00:00 2097-09-26 00:00:00 2097-10-06 00:00:00 2097-10-16 00:00:00 2097-10-26 12:00:00 2097-11-06 00:00:00 2097-11-16 00:00:00 2097-11-26 00:00:00 2097-12-06 00:00:00 2097-12-16 00:00:00 2097-12-26 12:00:00 2098-01-06 00:00:00 2098-01-16 00:00:00 2098-01-26 12:00:00 2098-02-06 00:00:00 2098-02-16 00:00:00 2098-02-25 00:00:00 2098-03-06 00:00:00 2098-03-16 00:00:00 2098-03-26 12:00:00 2098-04-06 00:00:00 2098-04-16 00:00:00 2098-04-26 00:00:00 2098-05-06 00:00:00 2098-05-16 00:00:00 2098-05-26 12:00:00 2098-06-06 00:00:00 2098-06-16 00:00:00 2098-06-26 00:00:00 2098-07-06 00:00:00 2098-07-16 00:00:00 2098-07-26 12:00:00 2098-08-06 00:00:00 2098-08-16 00:00:00 2098-08-26 12:00:00 2098-09-06 00:00:00 2098-09-16 00:00:00 2098-09-26 00:00:00 2098-10-06 00:00:00 2098-10-16 00:00:00 2098-10-26 12:00:00 2098-11-06 00:00:00 2098-11-16 00:00:00 2098-11-26 00:00:00 2098-12-06 00:00:00 2098-12-16 00:00:00 2098-12-26 12:00:00 2099-01-06 00:00:00 2099-01-16 00:00:00 2099-01-26 12:00:00 2099-02-06 00:00:00 2099-02-16 00:00:00 2099-02-25 00:00:00 2099-03-06 00:00:00 2099-03-16 00:00:00 2099-03-26 12:00:00 2099-04-06 00:00:00 2099-04-16 00:00:00 2099-04-26 00:00:00 2099-05-06 00:00:00 2099-05-16 00:00:00 2099-05-26 12:00:00 2099-06-06 00:00:00 2099-06-16 00:00:00 2099-06-26 00:00:00 2099-07-06 00:00:00 2099-07-16 00:00:00 2099-07-26 12:00:00 2099-08-06 00:00:00 2099-08-16 00:00:00 2099-08-26 12:00:00 2099-09-06 00:00:00 2099-09-16 00:00:00 2099-09-26 00:00:00 2099-10-06 00:00:00 2099-10-16 00:00:00 2099-10-26 12:00:00 2099-11-06 00:00:00 2099-11-16 00:00:00 2099-11-26 00:00:00 2099-12-06 00:00:00 2099-12-16 00:00:00 2099-12-26 12:00:00</span></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co"># Create monthly factors for a baseline era and early, mid and late 21st century eras</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>baseline <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(t, <span class="at">era =</span> <span class="dv">1991</span><span class="sc">:</span><span class="dv">2020</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>future <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(t, <span class="at">era =</span> <span class="fu">list</span>(<span class="at">early =</span> <span class="dv">2021</span><span class="sc">:</span><span class="dv">2040</span>, <span class="at">mid =</span> <span class="dv">2041</span><span class="sc">:</span><span class="dv">2060</span>, <span class="at">late =</span> <span class="dv">2061</span><span class="sc">:</span><span class="dv">2080</span>))</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="fu">str</span>(future)</span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; List of 3</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt;  $ early: Factor w/ 12 levels &quot;01&quot;,&quot;02&quot;,&quot;03&quot;,..: NA NA NA NA NA NA NA NA NA NA ...</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;era&quot;)= int 20</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;period&quot;)= chr &quot;month&quot;</span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt;  $ mid  : Factor w/ 12 levels &quot;01&quot;,&quot;02&quot;,&quot;03&quot;,..: NA NA NA NA NA NA NA NA NA NA ...</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;era&quot;)= int 20</span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;period&quot;)= chr &quot;month&quot;</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt;  $ late : Factor w/ 12 levels &quot;01&quot;,&quot;02&quot;,&quot;03&quot;,..: NA NA NA NA NA NA NA NA NA NA ...</span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;era&quot;)= int 20</span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt;   ..- attr(*, &quot;period&quot;)= chr &quot;month&quot;</span></span></code></pre></div>
+<p>For the “era” version, there are two interesting things to note
 here:</p>
 <ul>
-<li>The epochs do not have to coincide with the boundaries of the time
+<li>The eras do not have to coincide with the boundaries of the time
 series. In the example above, the time series starts in 2015, while the
-baseline epoch is from 1991. Obviously, the number of time steps from
-the time series that then fall within this epoch will then be
-reduced.</li>
+baseline era is from 1991. Obviously, the number of time steps from the
+time series that then fall within this era will then be reduced.</li>
 <li>The factor is always of the same length as the time series, with
 <code>NA</code> values where the time series values are not falling in
-the epoch. This ensures that the factor is compatible with the data set
+the era. This ensures that the factor is compatible with the data set
 which the time series describes, such that functions like
 <code>tapply()</code> will not throw an error.</li>
 </ul>
@@ -611,22 +628,21 @@ the month.</li>
 </ul>
 <div id="new-time-dimension" class="section level5">
 <h5>New “time” dimension</h5>
-<p>A CFtime instance describes the “time” dimension of an associated
-data set. When you process that dimension of the data set using
-<code>CFfactor()</code> or another method to filter or otherwise subset
-the “time” dimension, the resulting data set will have a different
-“time” dimension. To associate a proper CFtime instance with your
-processing result, the methods in this package return that CFtime
-instance as an attribute:</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>  new_time <span class="ot">&lt;-</span> <span class="fu">attr</span>(f_k, <span class="st">&quot;CFtime&quot;</span>)</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  new_time</span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; CF datum of origin:</span></span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1850-01-01 00:00:00</span></span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;   Calendar: noleap</span></span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; CF time series:</span></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt;   Elements: [1974-12-26 12:00:00 .. 2099-12-16 00:00:00] (average of 14.911572 days between 3060 elements)</span></span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt;   Bounds  : regular and consecutive</span></span></code></pre></div>
+<p>A <code>CFTime</code> instance describes the “time” dimension of an
+associated data set. When you process that dimension of the data set
+using <code>CFfactor()</code> or another method to filter or otherwise
+subset the “time” dimension, the resulting data set will have a
+different “time” dimension. To associate a proper <code>CFTime</code>
+instance with your processing result, the methods in this package return
+that <code>CFTime</code> instance as an attribute:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>  (new_time <span class="ot">&lt;-</span> <span class="fu">attr</span>(f_k, <span class="st">&quot;CFTime&quot;</span>))</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; CF calendar:</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1850-01-01 00:00:00</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt;   Type    : noleap</span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; Time series:</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt;   Elements: [2015-01-06 00:00:00 .. 2099-12-26 12:00:00] (average of 10.138771 days between 3060 elements)</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt;   Bounds  : regular and consecutive</span></span></code></pre></div>
 <p>In the vignette <a href="Processing.html">“Processing climate
 projection data”</a> is a fully worked out example of this.</p>
 </div>
@@ -645,20 +661,20 @@ processing. As an example, you might want to filter out months that have
 fewer than 90% of daily data from further processing or apply weights
 based on the actual coverage.</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># Is the time series complete?</span></span>
-<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">is_complete</span>(cf)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">is_complete</span>(t)</span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt; [1] TRUE</span></span>
 <span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a></span>
 <span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co"># How many time units fit in a factor level?</span></span>
-<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="fu">CFfactor_units</span>(cf, baseline)</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="fu">CFfactor_units</span>(t, baseline)</span>
 <span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co">#&gt;  [1] 31 28 31 30 31 30 31 31 30 31 30 31</span></span>
 <span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a></span>
 <span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co"># What&#39;s the absolute and relative coverage of our time series</span></span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, baseline, <span class="st">&quot;absolute&quot;</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(t, baseline, <span class="st">&quot;absolute&quot;</span>)</span>
 <span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt;  [1] 186 168 186 180 186 180 186 186 180 186 180 186</span></span>
-<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, baseline, <span class="st">&quot;relative&quot;</span>)</span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(t, baseline, <span class="st">&quot;relative&quot;</span>)</span>
 <span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a><span class="co">#&gt;  [1] 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2 0.2</span></span></code></pre></div>
-<p>The time series is complete but coverage of the baseline epoch is
-only 20%! Recall that the time series starts in 2015 while the baseline
+<p>The time series is complete but coverage of the baseline era is only
+20%! Recall that the time series starts in 2015 while the baseline
 period in the factor is for <code>1991:2020</code> so that’s only 6
 years of time series data out of 30 years of the baseline factor.</p>
 <p>An artificial example of missing data:</p>
@@ -667,29 +683,29 @@ years of time series data out of 30 years of the baseline factor.</p>
 <span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>cov <span class="ot">&lt;-</span> <span class="fl">0.8</span></span>
 <span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>offsets <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="dv">0</span><span class="sc">:</span>(n<span class="dv">-1</span>), n <span class="sc">*</span> cov)</span>
 <span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a></span>
-<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(<span class="st">&quot;days since 2020-01-01&quot;</span>, <span class="st">&quot;365_day&quot;</span>, offsets)</span>
-<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>cf</span>
-<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; CF datum of origin:</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>(t <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(<span class="st">&quot;days since 2020-01-01&quot;</span>, <span class="st">&quot;365_day&quot;</span>, offsets))</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a><span class="co">#&gt; Warning: Offsets not monotonically increasing.</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a><span class="co">#&gt; CF calendar:</span></span>
 <span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a><span class="co">#&gt;   Origin  : 2020-01-01 00:00:00</span></span>
 <span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
-<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt;   Calendar: 365_day</span></span>
-<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; CF time series:</span></span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt;   Type    : 365_day</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; Time series:</span></span>
 <span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt;   Elements: [2020-01-01 .. 2023-12-31] (average of 1.250214 days between 1168 elements)</span></span>
 <span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt;   Bounds  : not set</span></span>
 <span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co"># Note that there are about 1.25 days between observations</span></span>
 <span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a></span>
-<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>mon <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(cf, <span class="st">&quot;month&quot;</span>)</span>
-<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, mon, <span class="st">&quot;absolute&quot;</span>)</span>
-<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt;  [1] 26 25 28 27 26 25 26 21 24 23 24 25 26 26 24 26 25 23 26 24 22 21 20 19 26</span></span>
-<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; [26] 18 21 25 27 24 24 26 22 27 22 25 26 22 27 27 27 20 27 28 23 23 27 22</span></span>
-<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(cf, mon, <span class="st">&quot;relative&quot;</span>)</span>
-<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt;  [1] 0.8387097 0.8928571 0.9032258 0.9000000 0.8387097 0.8333333 0.8387097</span></span>
-<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt;  [8] 0.6774194 0.8000000 0.7419355 0.8000000 0.8064516 0.8387097 0.9285714</span></span>
-<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="co">#&gt; [15] 0.7741935 0.8666667 0.8064516 0.7666667 0.8387097 0.7741935 0.7333333</span></span>
-<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a><span class="co">#&gt; [22] 0.6774194 0.6666667 0.6129032 0.8387097 0.6428571 0.6774194 0.8333333</span></span>
-<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="co">#&gt; [29] 0.8709677 0.8000000 0.7741935 0.8387097 0.7333333 0.8709677 0.7333333</span></span>
-<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a><span class="co">#&gt; [36] 0.8064516 0.8387097 0.7857143 0.8709677 0.9000000 0.8709677 0.6666667</span></span>
-<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a><span class="co">#&gt; [43] 0.8709677 0.9032258 0.7666667 0.7419355 0.9000000 0.7096774</span></span></code></pre></div>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>mon <span class="ot">&lt;-</span> <span class="fu">CFfactor</span>(t, <span class="st">&quot;month&quot;</span>)</span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(t, mon, <span class="st">&quot;absolute&quot;</span>)</span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt;  [1] 24 22 24 26 26 27 24 24 27 25 22 24 29 25 28 23 27 24 27 21 24 24 20 21 25</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; [26] 21 23 26 26 20 25 28 22 21 26 27 25 23 26 25 24 23 23 26 23 21 26 25</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a><span class="fu">CFfactor_coverage</span>(t, mon, <span class="st">&quot;relative&quot;</span>)</span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt;  [1] 0.7741935 0.7857143 0.7741935 0.8666667 0.8387097 0.9000000 0.7741935</span></span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt;  [8] 0.7741935 0.9000000 0.8064516 0.7333333 0.7741935 0.9354839 0.8928571</span></span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="co">#&gt; [15] 0.9032258 0.7666667 0.8709677 0.8000000 0.8709677 0.6774194 0.8000000</span></span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a><span class="co">#&gt; [22] 0.7741935 0.6666667 0.6774194 0.8064516 0.7500000 0.7419355 0.8666667</span></span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="co">#&gt; [29] 0.8387097 0.6666667 0.8064516 0.9032258 0.7333333 0.6774194 0.8666667</span></span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a><span class="co">#&gt; [36] 0.8709677 0.8064516 0.8214286 0.8387097 0.8333333 0.7741935 0.7666667</span></span>
+<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a><span class="co">#&gt; [43] 0.7419355 0.8387097 0.7666667 0.6774194 0.8666667 0.8064516</span></span></code></pre></div>
 <p>Keep in mind, though, that there are data sets where the time unit is
 lower than the intended resolution of the data. Since the CF conventions
 recommend that the coarsest time unit is “day”, many files with monthly
@@ -702,11 +718,92 @@ verify that your data set is complete with the function
 </div>
 <div id="cftime-and-posixt" class="section level2">
 <h2>CFtime and POSIXt</h2>
-<p>The CF Metadata Conventions support nine different calendars. Of
-these, only the <code>standard</code>, <code>gregorian</code> and
-<code>proleptic_gregorian</code> calendars are fully compatible with
-POSIXt. The other calendars have varying degrees of discrepancies:</p>
+<p>The CF Metadata Conventions supports 11 different calendars. None of
+these are fully compatible with POSIXt, the basis for timekeeping on
+virtually all computers. The reason for this is that POSIXt does not
+consider leap seconds (just like the <code>tai</code> calendar) but
+computer clocks are periodically synchronized using Network Time
+Protocol servers that report UTC time. The problem is easily
+demonstrated:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># 1970-01-01 is the origin of POSIXt</span></span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a><span class="fu">difftime</span>(<span class="fu">as.POSIXct</span>(<span class="st">&quot;2024-01-01&quot;</span>), <span class="fu">as.POSIXct</span>(<span class="st">&quot;1970-01-01&quot;</span>), <span class="at">units =</span> <span class="st">&quot;sec&quot;</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a><span class="co">#&gt; Time difference of 1704067200 secs</span></span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a></span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co"># Leap seconds in UTC</span></span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>.leap.seconds</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;1972-07-01 GMT&quot; &quot;1973-01-01 GMT&quot; &quot;1974-01-01 GMT&quot; &quot;1975-01-01 GMT&quot;</span></span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt;  [5] &quot;1976-01-01 GMT&quot; &quot;1977-01-01 GMT&quot; &quot;1978-01-01 GMT&quot; &quot;1979-01-01 GMT&quot;</span></span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt;  [9] &quot;1980-01-01 GMT&quot; &quot;1981-07-01 GMT&quot; &quot;1982-07-01 GMT&quot; &quot;1983-07-01 GMT&quot;</span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt; [13] &quot;1985-07-01 GMT&quot; &quot;1988-01-01 GMT&quot; &quot;1990-01-01 GMT&quot; &quot;1991-01-01 GMT&quot;</span></span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt; [17] &quot;1992-07-01 GMT&quot; &quot;1993-07-01 GMT&quot; &quot;1994-07-01 GMT&quot; &quot;1996-01-01 GMT&quot;</span></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co">#&gt; [21] &quot;1997-07-01 GMT&quot; &quot;1999-01-01 GMT&quot; &quot;2006-01-01 GMT&quot; &quot;2009-01-01 GMT&quot;</span></span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co">#&gt; [25] &quot;2012-07-01 GMT&quot; &quot;2015-07-01 GMT&quot; &quot;2017-01-01 GMT&quot;</span></span></code></pre></div>
+<p><code>difftime()</code> is off by 27 seconds, the number of leap
+seconds in UTC since their introduction in 1972. Your computer may have
+the correct time based on UTC, but calculations over periods that
+include leap seconds are always off by a number of seconds.</p>
+<div id="duh" class="section level5">
+<h5>Duh!</h5>
+<p>If 27 seconds is of no concern to you or your application - perhaps
+your data has a daily resolution - then you can safely forget about the
+leap seconds in several of the calendars, in particular
+<code>standard</code> (for periods after 1582-10-15),
+<code>proleptic_gregorian</code> and <code>tai</code>. The
+<code>utc</code> calendar does account for leap seconds so consider if
+you should use that - this is the only calendar that considers leap
+seconds in calculation. These calendars support the generation of
+timestamps in POSIXct with the <code>as_timestamp()</code> function but
+note the potential for a discrepancy due to the presence of leap
+seconds.</p>
+</div>
+<div id="when-seconds-count" class="section level5">
+<h5>When seconds count</h5>
+<p>If second accuracy is of concern, then you should carefully consider
+the time keeping in the source of your data and use a matching calendar.
+The <code>utc</code> calendar is a sensible option if your equipment
+synchronizes time with an NTP server or a computer that does so. Even
+then you should ensure that time is accurate after a new leap second is
+introduced.</p>
+</div>
+<div id="bigger-problems" class="section level5">
+<h5>Bigger problems</h5>
+<p>The other calendars have discrepancies with POSIXt that are much
+larger, namely one or more days. These calendars do not support POSIXct
+timestamps and an error will be thrown if you try. If you really want
+the timestamps in POSIXct then you can generate the timestamps as
+character strings using this package, and then convert to a
+<code>POSIXct</code> or <code>Date</code> using the available R tools.
+Converting time series using these incompatible calendars to
+<code>POSIXct</code> or <code>Date</code> is likely to produce problems.
+This is most pronounced for the <code>360_day</code> calendar:</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="co"># Days in January and February</span></span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>t <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(<span class="st">&quot;days since 2023-01-01&quot;</span>, <span class="st">&quot;360_day&quot;</span>, <span class="dv">0</span><span class="sc">:</span><span class="dv">59</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>ts_days <span class="ot">&lt;-</span> <span class="fu">as_timestamp</span>(t, <span class="st">&quot;date&quot;</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a><span class="fu">as.Date</span>(ts_days)</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;2023-01-01&quot; &quot;2023-01-02&quot; &quot;2023-01-03&quot; &quot;2023-01-04&quot; &quot;2023-01-05&quot;</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a><span class="co">#&gt;  [6] &quot;2023-01-06&quot; &quot;2023-01-07&quot; &quot;2023-01-08&quot; &quot;2023-01-09&quot; &quot;2023-01-10&quot;</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a><span class="co">#&gt; [11] &quot;2023-01-11&quot; &quot;2023-01-12&quot; &quot;2023-01-13&quot; &quot;2023-01-14&quot; &quot;2023-01-15&quot;</span></span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a><span class="co">#&gt; [16] &quot;2023-01-16&quot; &quot;2023-01-17&quot; &quot;2023-01-18&quot; &quot;2023-01-19&quot; &quot;2023-01-20&quot;</span></span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a><span class="co">#&gt; [21] &quot;2023-01-21&quot; &quot;2023-01-22&quot; &quot;2023-01-23&quot; &quot;2023-01-24&quot; &quot;2023-01-25&quot;</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a><span class="co">#&gt; [26] &quot;2023-01-26&quot; &quot;2023-01-27&quot; &quot;2023-01-28&quot; &quot;2023-01-29&quot; &quot;2023-01-30&quot;</span></span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a><span class="co">#&gt; [31] &quot;2023-02-01&quot; &quot;2023-02-02&quot; &quot;2023-02-03&quot; &quot;2023-02-04&quot; &quot;2023-02-05&quot;</span></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a><span class="co">#&gt; [36] &quot;2023-02-06&quot; &quot;2023-02-07&quot; &quot;2023-02-08&quot; &quot;2023-02-09&quot; &quot;2023-02-10&quot;</span></span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a><span class="co">#&gt; [41] &quot;2023-02-11&quot; &quot;2023-02-12&quot; &quot;2023-02-13&quot; &quot;2023-02-14&quot; &quot;2023-02-15&quot;</span></span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a><span class="co">#&gt; [46] &quot;2023-02-16&quot; &quot;2023-02-17&quot; &quot;2023-02-18&quot; &quot;2023-02-19&quot; &quot;2023-02-20&quot;</span></span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a><span class="co">#&gt; [51] &quot;2023-02-21&quot; &quot;2023-02-22&quot; &quot;2023-02-23&quot; &quot;2023-02-24&quot; &quot;2023-02-25&quot;</span></span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="co">#&gt; [56] &quot;2023-02-26&quot; &quot;2023-02-27&quot; &quot;2023-02-28&quot; NA           NA</span></span></code></pre></div>
+<p>31 January is missing from the vector of <code>Date</code>s because
+the <code>360_day</code> calendar does not include it and 29 and 30
+February are <code>NA</code>s because POSIXt rejects them. This will
+produce problems later on when processing your data.</p>
+<p>The general advice is therefore: <strong>do not convert CFTime
+objects to Date objects</strong> unless you are sure that the
+<code>CFTime</code> object uses a POSIXt-compatible calendar.</p>
+<p>The degree of incompatibility for the various calendars is as
+follows:</p>
 <ul>
+<li><code>standard</code>: Only valid for periods after 1582-10-15. The
+preceeding period uses the Julian calendar.</li>
 <li><code>julian</code>: Every fouth year is a leap year. Dates like
 <code>2100-02-29</code> and <code>2200-02-29</code> are valid.</li>
 <li><code>365_day</code> or <code>noleap</code>: No leap year exists.
@@ -717,36 +814,11 @@ years.</li>
 means that 31 January, March, May, July, August, October and December
 never occur, while 29 and 30 February occur in every year.</li>
 </ul>
-<p>Converting time series using these incompatible calendars to
-<code>Date</code>s is likely to produce problems. This is most
-pronounced for the <code>360_day</code> calendar:</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># Days in January and February</span></span>
-<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>cf <span class="ot">&lt;-</span> <span class="fu">CFtime</span>(<span class="st">&quot;days since 2023-01-01&quot;</span>, <span class="st">&quot;360_day&quot;</span>, <span class="dv">0</span><span class="sc">:</span><span class="dv">59</span>)</span>
-<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>cf_days <span class="ot">&lt;-</span> <span class="fu">as_timestamp</span>(cf, <span class="st">&quot;date&quot;</span>)</span>
-<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a><span class="fu">as.Date</span>(cf_days)</span>
-<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co">#&gt;  [1] &quot;2023-01-01&quot; &quot;2023-01-02&quot; &quot;2023-01-03&quot; &quot;2023-01-04&quot; &quot;2023-01-05&quot;</span></span>
-<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="co">#&gt;  [6] &quot;2023-01-06&quot; &quot;2023-01-07&quot; &quot;2023-01-08&quot; &quot;2023-01-09&quot; &quot;2023-01-10&quot;</span></span>
-<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a><span class="co">#&gt; [11] &quot;2023-01-11&quot; &quot;2023-01-12&quot; &quot;2023-01-13&quot; &quot;2023-01-14&quot; &quot;2023-01-15&quot;</span></span>
-<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a><span class="co">#&gt; [16] &quot;2023-01-16&quot; &quot;2023-01-17&quot; &quot;2023-01-18&quot; &quot;2023-01-19&quot; &quot;2023-01-20&quot;</span></span>
-<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a><span class="co">#&gt; [21] &quot;2023-01-21&quot; &quot;2023-01-22&quot; &quot;2023-01-23&quot; &quot;2023-01-24&quot; &quot;2023-01-25&quot;</span></span>
-<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a><span class="co">#&gt; [26] &quot;2023-01-26&quot; &quot;2023-01-27&quot; &quot;2023-01-28&quot; &quot;2023-01-29&quot; &quot;2023-01-30&quot;</span></span>
-<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a><span class="co">#&gt; [31] &quot;2023-02-01&quot; &quot;2023-02-02&quot; &quot;2023-02-03&quot; &quot;2023-02-04&quot; &quot;2023-02-05&quot;</span></span>
-<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a><span class="co">#&gt; [36] &quot;2023-02-06&quot; &quot;2023-02-07&quot; &quot;2023-02-08&quot; &quot;2023-02-09&quot; &quot;2023-02-10&quot;</span></span>
-<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a><span class="co">#&gt; [41] &quot;2023-02-11&quot; &quot;2023-02-12&quot; &quot;2023-02-13&quot; &quot;2023-02-14&quot; &quot;2023-02-15&quot;</span></span>
-<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a><span class="co">#&gt; [46] &quot;2023-02-16&quot; &quot;2023-02-17&quot; &quot;2023-02-18&quot; &quot;2023-02-19&quot; &quot;2023-02-20&quot;</span></span>
-<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a><span class="co">#&gt; [51] &quot;2023-02-21&quot; &quot;2023-02-22&quot; &quot;2023-02-23&quot; &quot;2023-02-24&quot; &quot;2023-02-25&quot;</span></span>
-<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a><span class="co">#&gt; [56] &quot;2023-02-26&quot; &quot;2023-02-27&quot; &quot;2023-02-28&quot; NA           NA</span></span></code></pre></div>
-<p>31 January is missing from the vector of <code>Date</code>s because
-the <code>360_day</code> calendar does not include it and 29 and 30
-February are <code>NA</code>s because POSIXt rejects them. This will
-produce problems later on when processing your data.</p>
-<p>The general advice is therefore: <strong>do not convert CFtime
-objects to Date objects</strong> unless you are sure that the
-<code>CFtime</code> object uses a POSIXt-compatible calendar.</p>
+</div>
 <div id="so-how-do-i-compare-climate-projection-data-with-different-calendars" class="section level5">
 <h5>So how do I compare climate projection data with different
 calendars?</h5>
-<p>One reason to convert the “time” dimension from different climate
+<p>One reason to convert the time dimension from different climate
 projection data sets is to be able to compare the data from different
 models and produce a multi-model ensemble. The correct procedure to do
 this is to first calculate <strong>for each data set
@@ -757,9 +829,11 @@ period), which will typically involve aggregation to a lower resolution
 aggregate data from multiple data sets to compute statistically
 interesting properties (such as average among models and standard
 deviation, etc).</p>
-<p>Once data is aggregated from daily or higher-resolution values, the
-different calendars no longer matter (although if you do need to convert
-averaged data to absolute data you should use
+<p>Once data is aggregated from daily or higher-resolution values to a
+lower temporal resolution - such as a “month” - the different calendars
+no longer matter (although if you do need to convert averaged data
+(e.g. average daily precipitation in a month) to absolute data
+(e.g. precipitation per month) you should use
 <code>CFfactor_units()</code> to make sure that you use the correct
 scaling factor).</p>
 <p>Otherwise, there really shouldn’t be any reason to convert the time
@@ -767,7 +841,7 @@ series in the data files to <code>Date</code>s. Climate projection data
 is virtually never compared on a day-to-day basis between different
 models and neither does complex date arithmetic make much sense (such as
 adding intervals) - <code>CFtime</code> can support basic arithmetic by
-manipulation the offsets of the <code>CFtime</code> object. The
+manipulation the offsets of the <code>CFTime</code> object. The
 character representations that are produced are perfectly fine to use
 for <code>dimnames()</code> on an array or as <code>rownames()</code> in
 a <code>data.frame</code> and these also support basic logical
@@ -787,13 +861,13 @@ data”</a>.</p>
 projection data. It is not a full implementation of the CF Metadata
 Conventions “time” component.</li>
 <li>In parsing and deparsing of offsets and timestamps, data is rounded
-to 3 digits of precision of the unit of the datum. When using a
-description of time that is very different from the datum unit, this may
-lead to some loss of precision due to rounding errors. For instance, if
-milli-second precision is required, use a unit of “seconds”. The authors
-have no knowledge of published climate projection data that requires
-milli-second precision so for the intended use of the package this issue
-is marginal.</li>
+to 3 digits of precision of the unit of the calendar. When using a
+description of time that is very different from the calendar unit, this
+may lead to some loss of precision due to rounding errors. For instance,
+if milli-second precision is required, use a unit of “seconds”. The
+authors have no knowledge of published climate projection data that
+requires milli-second precision so for the intended use of the package
+this issue is marginal.</li>
 </ul>
 </div>
 
