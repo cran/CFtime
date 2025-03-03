@@ -6,7 +6,7 @@ knitr::opts_chunk$set(
 
 ## ----setup, include = FALSE---------------------------------------------------
 library(CFtime)
-library(ncdf4)
+library(ncdfCF)
 
 ## -----------------------------------------------------------------------------
 # POSIXt calculations on a standard calendar - INCORRECT
@@ -21,44 +21,49 @@ as_timestamp(CFtime("days since 1949-12-01", "360_day", 43289))
 (t <- CFtime("days since 1949-12-01", "360_day", 19830:90029))
 
 ## -----------------------------------------------------------------------------
-# Opening a data file that is included with the package and showing some attributes.
+# Opening a data file that is included with the package.
 # Usually you would `list.files()` on a directory of your choice.
 fn <- list.files(path = system.file("extdata", package = "CFtime"), full.names = TRUE)[1]
-nc <- nc_open(fn)
-attrs <- ncatt_get(nc, "")
-attrs$title
+(ds <- ncdfCF::open_ncdf(fn))
 
 # "Conventions" global attribute must have a string like "CF-1.*" for this package to work reliably
-attrs$Conventions
 
-# Create the CFTime instance from the metadata in the file.
-(t <- CFtime(nc$dim$time$units, 
-             nc$dim$time$calendar, 
-             nc$dim$time$vals))
+# Look at the "time" axis
+(time <- ds[["time"]])
+
+# Get the CFTime instance from the "time" axis
+(t <- time$time())
+
+## ----eval = FALSE-------------------------------------------------------------
+#  library(RNetCDF)
+#  nc <- open.nc(fn)
+#  att.get.nc(nc, -1, "Conventions")
+#  t <- CFtime(att.get.nc(nc, "time", "units"),
+#              att.get.nc(nc, "time", "calendar"),
+#              var.get.nc(nc, "time"))
+#  
+#  library(ncdf4)
+#  nc <- nc_open(fn)
+#  nc_att_get(nc, 0, "Conventions")
+#  t <- CFtime(nc$dim$time$units,
+#              nc$dim$time$calendar,
+#              nc$dim$time$vals)
 
 ## -----------------------------------------------------------------------------
-library(RNetCDF)
-nc <- open.nc(fn)
-att.get.nc(nc, -1, "Conventions")
-(t <- CFtime(att.get.nc(nc, "time", "units"), 
-             att.get.nc(nc, "time", "calendar"), 
-             var.get.nc(nc, "time")))
-
-## -----------------------------------------------------------------------------
-dates <- as_timestamp(t, format = "date")
+dates <- t$as_timestamp(format = "date")
 dates[1:10]
 
 ## -----------------------------------------------------------------------------
-range(t)
+t$range()
 
 ## -----------------------------------------------------------------------------
 # Create a dekad factor for the whole `t` time series that was created above
-f_k <- CFfactor(t, "dekad")
+f_k <- t$factor("dekad")
 str(f_k)
 
 # Create monthly factors for a baseline era and early, mid and late 21st century eras
-baseline <- CFfactor(t, era = 1991:2020)
-future <- CFfactor(t, era = list(early = 2021:2040, mid = 2041:2060, late = 2061:2080))
+baseline <- t$factor(era = 1991:2020)
+future <- t$factor(era = list(early = 2021:2040, mid = 2041:2060, late = 2061:2080))
 str(future)
 
 ## -----------------------------------------------------------------------------
@@ -69,11 +74,11 @@ str(future)
 is_complete(t)
 
 # How many time units fit in a factor level?
-CFfactor_units(t, baseline)
+t$factor_units(baseline)
 
 # What's the absolute and relative coverage of our time series
-CFfactor_coverage(t, baseline, "absolute")
-CFfactor_coverage(t, baseline, "relative")
+t$factor_coverage(baseline, "absolute")
+t$factor_coverage(baseline, "relative")
 
 ## -----------------------------------------------------------------------------
 # 4 years of data on a `365_day` calendar, keep 80% of values
@@ -84,9 +89,9 @@ offsets <- sample(0:(n-1), n * cov)
 (t <- CFtime("days since 2020-01-01", "365_day", offsets))
 # Note that there are about 1.25 days between observations
 
-mon <- CFfactor(t, "month")
-CFfactor_coverage(t, mon, "absolute")
-CFfactor_coverage(t, mon, "relative")
+mon <- t$factor("month")
+t$factor_coverage(mon, "absolute")
+t$factor_coverage(mon, "relative")
 
 ## -----------------------------------------------------------------------------
 # 1970-01-01 is the origin of POSIXt
@@ -98,6 +103,6 @@ difftime(as.POSIXct("2024-01-01"), as.POSIXct("1970-01-01"), units = "sec")
 ## -----------------------------------------------------------------------------
 # Days in January and February
 t <- CFtime("days since 2023-01-01", "360_day", 0:59)
-ts_days <- as_timestamp(t, "date")
+ts_days <- t$as_timestamp("date")
 as.Date(ts_days)
 

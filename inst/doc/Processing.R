@@ -6,35 +6,30 @@ knitr::opts_chunk$set(
 
 ## ----setup, include = FALSE---------------------------------------------------
 library(CFtime)
-library(ncdf4)
 
 ## -----------------------------------------------------------------------------
 # Setting up
+library(ncdfCF)
 fn <- list.files(path = system.file("extdata", package = "CFtime"), full.names = TRUE)[1]
-nc <- nc_open(fn)
-cf <- CFtime(nc$dim$time$units, 
-             nc$dim$time$calendar, 
-             nc$dim$time$vals)
+(ds <- ncdfCF::open_ncdf(fn))
+
+# The T axis, with name "time" has a CFTime instance
+t <- ds[["time"]]$time()
 
 # Create monthly factors for a baseline era and early, mid and late 21st century eras
-baseline <- CFfactor(cf, era = 1991:2020)
-future <- CFfactor(cf, era = list(early = 2021:2040, mid = 2041:2060, late = 2061:2080))
+baseline <- t$factor(era = 1991:2020)
+future <- t$factor(era = list(early = 2021:2040, mid = 2041:2060, late = 2061:2080))
 str(baseline)
 str(future)
 
 ## -----------------------------------------------------------------------------
-# Read the data from the netCDF file.
-# Keep degenerate dimensions so that we have a predictable data structure: 3-dimensional array.
+# Get the data for the "pr" data variable from the netCDF data set.
+# The `CFData$array()` method ensures that data are in standard R orientation.
 # Converts units of kg m-2 s-1 to mm/day.
-pr <- ncvar_get(nc, "pr", collapse_degen = FALSE) * 86400
-
-# Assign dimnames(), optional.
-dimnames(pr) <- list(nc$dim$lon$vals, nc$dim$lat$vals, as_timestamp(cf))
+pr <- ds[["pr"]]$data()$array() * 86400
 
 # Get a global attribute from the file
-experiment <- ncatt_get(nc, "")$experiment_id
-
-nc_close(nc)
+experiment <- ds$attribute("experiment_id")
 
 # Calculate the daily average precipitation per month for the baseline period
 # and the three future eras.
@@ -44,7 +39,7 @@ pr_future <- lapply(future, function(f) apply(pr, 1:2, tapply, f, mean))  # a li
 # Calculate the precipitation anomalies for the future eras against the baseline.
 # Working with daily averages per month so we can simply subtract and then multiply by days 
 # per month for each of the factor levels using the CF calendar.
-ano <- mapply(function(pr, f) {(pr - pr_base) * CFfactor_units(cf, f)}, pr_future, future, SIMPLIFY = FALSE)
+ano <- mapply(function(pr, f) {(pr - pr_base) * t$factor_units(f)}, pr_future, future, SIMPLIFY = FALSE)
 
 # Plot the results
 plot(1:12, ano$early[,1,1], type = "o", col = "blue", ylim = c(-50, 40), xlim = c(1, 12), 
@@ -61,16 +56,15 @@ lf <- list.files(path = system.file("extdata", package = "CFtime"), full.names =
 # Loop over the files individually
 # ano is here a list with each element holding the results for a single model
 ano <- lapply(lf, function(fn) {
-  nc <- nc_open(fn)
-  cf <- CFtime(nc$dim$time$units, nc$dim$time$calendar, nc$dim$time$vals)
-  pr <- ncvar_get(nc, "pr", collapse_degen = FALSE) * 86400
-  nc_close(nc)
+  ds <- ncdfCF::open_ncdf(fn)
+  t <- ds[["time"]]$time()
+  pr <- ds[["pr"]]$data()$array() * 86400
 
-  baseline <- CFfactor(cf, era = 1991:2020)
+  baseline <- t$factor(era = 1991:2020)
   pr_base <- apply(pr, 1:2, tapply, baseline, mean)
-  future <- CFfactor(cf, era = list(early = 2021:2040, mid = 2041:2060, late = 2061:2080))
+  future <- t$factor(era = list(early = 2021:2040, mid = 2041:2060, late = 2061:2080))
   pr_future <- lapply(future, function(f) apply(pr, 1:2, tapply, f, mean))
-  mapply(function(pr, f) {(pr - pr_base) * CFfactor_units(cf, f)}, pr_future, future, SIMPLIFY = FALSE)
+  mapply(function(pr, f) {(pr - pr_base) * t$factor_units(f)}, pr_future, future, SIMPLIFY = FALSE)
 })
 
 # Era names
@@ -81,35 +75,33 @@ dim(eras) <- 3
 # For each era, grab the data for each of the ensemble members, simplify to an array
 # and take the mean per row (months, in this case)
 ensemble <- apply(eras, 1, function(e) {
-  rowMeans(sapply(ano, function(a) a[[e]], simplify = T))})
+  rowMeans(sapply(ano, function(a) a[[e]], simplify = TRUE))})
 colnames(ensemble) <- eras
 rownames(ensemble) <- rownames(ano[[1]][[1]])
 ensemble
 
 ## ----eval = FALSE-------------------------------------------------------------
-#  library(ncdf4)
+#  library(ncdfCF)
 #  library(abind)
 #  
-#  prepare_CORDEX <- function(fn, var) {
-#    offsets <- vector("list", length(fn))
+#  prepare_CORDEX <- function(fn, var, aoi) {
 #    data <- vector("list", length(fn))
 #    for (i in 1:length(fn)) {
-#      nc <- nc_open(fn[i])
-#      if (i == 1)
-#        # Create an "empty" CFtime object, without elements
-#        cf <- CFtime(nc$dim$time$units, nc$dim$time$calendar)
+#      ds <- ncdfCF::open_ncdf(fn[i])
+#      if (i == 1) {
+#        # Get a CFTime instance from the first file
+#        t <- ds[["time"]]$time()
+#      } else {
+#        # Add offsets from the file and add to the CFTime instance
+#        t <- t + ds[["time"]]$time()$offsets
+#      }
 #  
-#      # Make lists of all datum offsets and data arrays
-#      offsets[[i]] <- as.vector(nc$dim$time$vals)
-#      data[[i]] <- ncvar_get(nc, var,
-#                             start = c(10, 10, 1), count = c(100, 100, -1), # spatial subsetting
-#                             collapse_degen = FALSE)
-#  
-#      nc_close(nc)
+#      # Put the subsetted data array in the list
+#      data[[i]] <- ds[[var]]$subset(aoi = aoi)$array()
 #    }
 #  
-#    # Create a list for output with the CFtime instance assigned the offsets and
+#    # Create a list for output with the CFTime instance and
 #    # the data bound in a single 3-dimensional array
-#    list(CFtime = cf + unlist(offsets), data = abind(data, along = 3))
+#    list(CFTime = t, data = abind(data, along = 3))
 #  }
 

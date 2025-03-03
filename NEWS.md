@@ -1,3 +1,10 @@
+# CFtime 1.5.1
+
+* `CFTime$slice()` can now work with a single or multiple timestamp values.
+* Test coverage increased.
+* Documentation updated, all runnable example code uses `ncdfCF` package.
+* Minor code fixes.
+
 # CFtime 1.5.0
 
 * Code is updated to align with the CF 1.12 release. Specifically, calendars 
