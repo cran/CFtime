@@ -3,12 +3,10 @@
  - update hyperlinks (to e.g. latest CF version)
 
 # 1.6
- - Climatology
- - Paleocalendar
+ - User-defined calendar
  - equidistant by element and calendar
 
 # Further away
  - cut() needs to support "2 days" etc
  - filter() like tidyverse -> CFsubset
  - CFfactor() can use epochs with lower resolution such as [year, month] for 3-hr data: e.g. daily avg per month per epoch
- - Epoch factor periods should have climatological CFtime

@@ -4,7 +4,7 @@
 #' follow the CF Metadata Conventions, and its productive use in R.
 #'
 #' The class has a field `cal` which holds a specific calendar from the
-#' allowed types (9 named calendars are currently supported). The calendar is
+#' allowed types (all named calendars are supported). The calendar is
 #' also implemented as a (hidden) class which converts netCDF file encodings to
 #' timestamps as character strings, and vice-versa. Bounds information (the
 #' period of time over which a timestamp is valid) is used when defined in the
@@ -49,12 +49,7 @@ CFTime <- R6::R6Class("CFTime",
     #' @param offsets Numeric or character vector, optional. When numeric, a
     #'   vector of offsets from the origin in the time series. When a character
     #'   vector of length 2 or more, timestamps in ISO8601 or UDUNITS format.
-    #'   When a character string, a timestamp in ISO8601 or UDUNITS format and
-    #'   then a time series will be generated with a separation between steps
-    #'   equal to the unit of measure in the definition, inclusive of the
-    #'   definition timestamp. The unit of measure of the offsets is defined by
-    #'   the `definition` argument.
-    initialize = function(definition, calendar, offsets = NULL) {
+    initialize = function(definition, calendar = "standard", offsets = NULL) {
       if (is.null(calendar)) calendar <- "standard" # This may occur when "calendar" attribute is not defined in the NC file
       calendar <- tolower(calendar)
       self$cal <- switch(calendar,
@@ -69,6 +64,7 @@ CFTime <- R6::R6Class("CFTime",
         "noleap" = CFCalendar365$new(calendar, definition),
         "366_day" = CFCalendar366$new(calendar, definition),
         "all_leap" = CFCalendar366$new(calendar, definition),
+        "none" = CFCalendarNone$new(calendar, definition),
         stop("Invalid calendar specification", call. = FALSE)
       )
 
@@ -90,15 +86,13 @@ CFTime <- R6::R6Class("CFTime",
         time <- self$cal$parse(offsets)
         if (anyNA(time$year)) stop("Argument `offsets` contains invalid timestamps", call. = FALSE) # nocov
 
-        if (length(offsets) == 1L) {
-          self$offsets <- seq(0L, time$offset[1L])
-          self$resolution <- 1
-        } else {
-          self$offsets <- time$offset
+        self$offsets <- time$offset
+        if (length(offsets) > 1L)
           self$resolution <- (max(self$offsets) - min(self$offsets)) / (length(self$offsets) - 1L)
-          if (any(diff(self$offsets) <= 0))
-            warning("Offsets not monotonically increasing.", call. = FALSE)
-        }
+        else
+          self$resolution <- NA_real_
+        if (any(diff(self$offsets) <= 0))
+          warning("Offsets not monotonically increasing.", call. = FALSE)
       } else if (!is.null(offsets)) stop("Invalid offsets for CFTime object", call. = FALSE)
     },
 
@@ -112,11 +106,18 @@ CFTime <- R6::R6Class("CFTime",
         b  <- "  Bounds  : (not set)\n"
       } else {
         d <- self$range()
-        el <- if (noff > 1L) {
-          sprintf("  Elements: [%s .. %s] (average of %f %s between %d elements)\n",
-                 d[1L], d[2L], self$resolution, CFt$units$name[self$cal$unit], noff)
-        } else
-          paste("  Elements:", d[1L], "\n")
+        if (inherits(self$cal, "CFCalendarNone")) {
+          el <- if (noff > 1L) {
+            sprintf("  Elements: Series of %d elements at %s\n", noff, d[1L])
+          } else
+            paste("  Element : One element at", d[1L], "\n")
+        } else {
+          el <- if (noff > 1L) {
+            sprintf("  Elements: [%s .. %s] (average of %f %s between %d elements)\n",
+                   d[1L], d[2L], self$resolution, CFt$units$name[self$cal$unit], noff)
+          } else
+            paste("  Element :", d[1L], "\n")
+        }
 
         b <- if (is.logical(self$bounds)) {
           if (self$bounds) "  Bounds  : regular and consecutive\n"
@@ -367,7 +368,7 @@ CFTime <- R6::R6Class("CFTime",
     #'   `(2, length(self$offsets))` or a single logical value.
     #' @return `self` invisibly.
     set_bounds = function(value) {
-      if (isFALSE(value)) self$bounds <- FALSE
+      if (is.null(value) || isFALSE(value)) self$bounds <- FALSE
       else if (isTRUE(value)) self$bounds <- TRUE
       else {
         off <- self$offsets
@@ -389,8 +390,8 @@ CFTime <- R6::R6Class("CFTime",
             diff(range(diff(value[1L,]))) == 0) value <- TRUE
 
         self$bounds <- value
-        invisible(self)
       }
+      invisible(self)
     },
 
     #' This method returns `TRUE` if the time series has uniformly distributed
@@ -452,10 +453,10 @@ CFTime <- R6::R6Class("CFTime",
     #'   An attribute 'CFTime' will have the same definition as `self` but with
     #'   offsets corresponding to the time steps falling between the two
     #'   extremes. If there are no values between the extremes, the attribute is
-    #'   `NULL`.
+    #'   not set.
     slice = function(extremes, closed = FALSE) {
       if (!is.character(extremes) || length(extremes) < 1L)
-        stop("Second argument must be a character vector of at least one timestamp.", call. = FALSE)
+        stop("Second argument must be a character vector of at least one timestamp.", call. = FALSE) # nocov
 
       off <- self$offsets
       roff <- range(off)
@@ -473,7 +474,7 @@ CFTime <- R6::R6Class("CFTime",
             t$set_bounds(bnds[, out, drop = FALSE])
           attr(out, "CFTime") <- t
         } else
-          out <- rep(FALSE, length(off))
+          out <- rep(FALSE, length(off)) # nocov
       }
       out
     },
@@ -549,27 +550,26 @@ CFTime <- R6::R6Class("CFTime",
       f
     },
 
-    #' @description Generate a factor for the offsets, or a part thereof. This is
-    #' specifically interesting for creating factors from the date part of the
-    #' time series that aggregate the time series into longer time periods (such
-    #' as month) that can then be used to process daily CF data sets using, for
-    #' instance, `tapply()`.
+    #' @description Generate a factor for the offsets, or a part thereof. This
+    #'   is specifically interesting for creating factors from the date part of
+    #'   the time series that aggregate the time series into longer time periods
+    #'   (such as month) that can then be used to process daily CF data sets
+    #'   using, for instance, `tapply()`.
     #'
-    #' The factor will respect the calendar that the time series is built on.
+    #'   The factor will respect the calendar that the time series is built on.
     #'
-    #' The factor will be generated in the order of the offsets. While typical
-    #' CF-compliant data sources use ordered time series there is, however, no
-    #' guarantee that the factor is ordered. For most processing with a factor
-    #' the ordering is of no concern.
+    #'   The factor will be generated in the order of the offsets. While typical
+    #'   CF-compliant data sources use ordered time series there is, however, no
+    #'   guarantee that the factor is ordered. For most processing with a factor
+    #'   the ordering is of no concern.
     #'
-    #' If the `era` parameter is specified, either as a vector of years to
-    #' include in the factor, or as a list of such vectors, the factor will only
-    #' consider those values in the time series that fall within the list of
-    #' years, inclusive of boundary values. Other values in the factor will be
-    #' set to `NA`. The years need not be contiguous, within a single vector or
-    #' among the list items, or in order.
+    #'   If the `era` parameter is specified, either as a vector of years to
+    #'   include in the factor, or as a list of such vectors, the factor will
+    #'   only consider those values in the time series that fall within the list
+    #'   of years, inclusive of boundary values. Other values in the factor will
+    #'   be set to `NA`.
     #'
-    #' The following periods are supported by this method:
+    #'   The following periods are supported by this method:
     #'
     #' \itemize{
     #'   \item `year`, the year of each offset is returned as "YYYY".
@@ -594,44 +594,45 @@ CFTime <- R6::R6Class("CFTime",
     #'   preceeded by "YYYY-" if no `era` is specified.
     #' }
     #'
-    #' It is not possible to create a factor for a period that is shorter than
-    #' the temporal resolution of the calendar. As an example, if the calendar
-    #' has a monthly unit, a dekad or day factor cannot be created.
+    #'   It is not possible to create a factor for a period that is shorter than
+    #'   the temporal resolution of the calendar. As an example, if the calendar
+    #'   has a monthly unit, a dekad or day factor cannot be created.
     #'
-    #' Creating factors for other periods is not supported by this method.
-    #' Factors based on the timestamp information and not dependent on the
-    #' calendar can trivially be constructed from the output of the
-    #' [as_timestamp()] function.
+    #'   Creating factors for other periods is not supported by this method.
+    #'   Factors based on the timestamp information and not dependent on the
+    #'   calendar can trivially be constructed from the output of the
+    #'   [as_timestamp()] function.
     #'
-    #' For non-era factors the attribute 'CFTime' of the result contains a
-    #' `CFTime` instance that is valid for the result of applying the factor to
-    #' a resource that this instance is associated with. In other words, if
-    #' `CFTime` instance 'At' describes the temporal dimension of resource 'A'
-    #' and a factor 'Af' is generated from `Af <- At$factor()`, then
-    #' `Bt <- attr(Af, "CFTime")` describes the temporal dimension of the result
-    #' of, say, `B <- apply(A, 1:2, tapply, Af, FUN)`. The 'CFTime' attribute is
-    #' `NULL` for era factors.
+    #'   Attribute 'CFTime' of the result contains a `CFTime` instance that is
+    #'   valid for the result of applying the factor to a resource that this
+    #'   instance is associated with. In other words, if `CFTime` instance 'At'
+    #'   describes the temporal dimension of resource 'A' and a factor 'Af' is
+    #'   generated from `Af <- At$factor()`, then `Bt <- attr(Af, "CFTime")`
+    #'   describes the temporal dimension of the result of, say, `B <- apply(A,
+    #'   1:2, tapply, Af, FUN)`. The 'CFTime' attribute contains a
+    #'   [CFClimatology] instance for era factors.
     #'
     #' @param period character. A character string with one of the values
     #'   "year", "season", "quarter", "month" (the default), "dekad" or "day".
     #' @param era numeric or list, optional. Vector of years for which to
     #'   construct the factor, or a list whose elements are each a vector of
-    #'   years. If `era` is not specified, the factor will use the entire time
-    #'   series for the factor.
-    #' @return If `era` is a single vector or not specified, a factor with a
-    #'   length equal to the number of offsets in this instance. If `era` is a
-    #'   list, a list with the same number of elements and names as `era`,
-    #'   each containing a factor. Elements in the factor will be set to `NA`
-    #'   for time series values outside of the range of specified years.
+    #'   years. The extreme values of the supplied vector will be used. Note
+    #'   that if a single year is specified that the result is valid, but not a
+    #'   climatological statistic. If `era` is not specified, the factor will
+    #'   use the entire time series for the factor.
+    #' @return If `era` is a single vector or `NULL`, a factor with a length
+    #'   equal to the number of offsets in this instance. If `era` is a list, a
+    #'   list with the same number of elements and names as `era`, each
+    #'   containing a factor. Elements in the factor will be set to `NA` for
+    #'   time series values outside of the range of specified years.
     #'
-    #'   The factor, or factors in the list, have attributes 'period', 'era'
-    #'   and 'CFTime'. Attribute 'period' holds the value of the `period`
-    #'   argument. Attribute 'era' indicates the number of years that are
-    #'   included in the era, or -1 if no `era` is provided. Attribute
-    #'   'CFTime' holds an instance of `CFTime` that has the same definition as
-    #'   this instance, but with offsets corresponding to the mid-point of
-    #'   non-era factor levels; if the `era` argument is specified,
-    #'   attribute 'CFTime' is `NULL`.
+    #'   The factor, or factors in the list, have attributes 'period', 'era' and
+    #'   'CFTime'. Attribute 'period' holds the value of the `period` argument.
+    #'   Attribute 'era' indicates the number of years that are included in the
+    #'   era, or -1 if no `era` is provided. Attribute 'CFTime' holds an
+    #'   instance of `CFTime` or `CFClimatology` that has the same definition as
+    #'   this instance, but with offsets corresponding to the mid-point of the
+    #'   factor levels.
     factor = function(period = "month", era = NULL) {
       if (length(self$offsets) < 10L) stop("Cannot create a factor for very short time series", call. = FALSE) # nocov
 
@@ -710,30 +711,29 @@ CFTime <- R6::R6Class("CFTime",
                  yr <- as.integer(substr(ll, 1L, 4L))
                  if (lp == 36L)
                    dt <- c(dt, sprintf("%04d-01-01", yr + 1L))
-                 else dt <- c(dt, sprintf("%04d-%02d-%s", yr, (lp + 1L) %/% 3L + 1L, c("01", "11", "21")[(lp + 1L) %% 3L + 1L]))
+                 else dt <- c(dt, sprintf("%04d-%02d-%s", yr, lp %/% 3L + 1L, c("01", "11", "21")[lp %% 3L + 1L]))
                },
                "day"     = {
                  out <- as.factor(sprintf("%04d-%02d-%02d", time$year, time$month, time$day))
-                 l <- levels(out)
-                 lp <- l[nlevels(out)]
-                 last <- self$cal$offsets2time(self$cal$parse(lp)$offset)
-                 dt <- c(l, sprintf("%04d-%02d-%02d", last$year, last$month, last$day))
+                 new_time <- CFTime$new(self$cal$definition, self$cal$name, paste(levels(out), "12:00:00"))
                }
         )
 
         # Convert bounds dates to an array of offsets, find mid-points, create new CFTime instance
-        off  <- self$cal$parse(dt)$offset
-        off[is.na(off)] <- 0     # This can happen only when the time series starts at or close to the origin, for seasons
-        noff <- length(off)
-        bnds <- rbind(off[1L:(noff - 1L)], off[2L:noff])
-        off  <- bnds[1L,] + (bnds[2L,] - bnds[1L,]) * 0.5
-        new_cf <- CFTime$new(self$cal$definition, self$cal$name, off)
-        bounds(new_cf) <- TRUE
+        if (period != "day") {
+          off  <- self$cal$parse(dt)$offset
+          off[is.na(off)] <- 0     # This can happen only when the time series starts at or close to the origin, for seasons
+          noff <- length(off)
+          bnds <- rbind(off[1L:(noff - 1L)], off[2L:noff])
+          off  <- bnds[1L,] + (bnds[2L,] - bnds[1L,]) * 0.5
+          new_time <- CFTime$new(self$cal$definition, self$cal$name, off)
+        }
+        bounds(new_time) <- TRUE
 
         # Bind attributes to the factor
         attr(out, "era") <- -1L
         attr(out, "period") <- period
-        attr(out, "CFTime") <- new_cf
+        attr(out, "CFTime") <- new_time
         return(out)
       }
 
@@ -743,19 +743,94 @@ CFTime <- R6::R6Class("CFTime",
       else stop("When specified, the `era` parameter must be a numeric vector or a list thereof", call. = FALSE)
 
       out <- lapply(ep, function(years) {
-        f <- switch(period,
-                    "year"    = ifelse(time$year %in% years, sprintf("%04d", time$year), NA_character_),
-                    "season"  = ifelse((time$month == 12L) & ((time$year + 1L) %in% years), "S1",
-                                       ifelse((time$month < 12L) & (time$year %in% years), sprintf("S%d", time$month %/% 3L + 1L), NA_character_)),
-                    "quarter" = ifelse(time$year %in% years, sprintf("Q%d", (time$month - 1L) %/% 3L + 1L), NA_character_),
-                    "month"   = ifelse(time$year %in% years, months[time$month], NA_character_),
-                    "dekad"   = ifelse(time$year %in% years, sprintf("D%02d", (time$month - 1L) * 3L + pmin.int((time$day - 1L) %/% 10L + 1L, 3L)), NA_character_),
-                    "day"     = ifelse(time$year %in% years, sprintf("%s-%02d", months[time$month], time$day), NA_character_)
+        years <- as.integer(years)
+        yrs <- range(years)
+        mid_yr <- as.integer(yrs[1L] + (yrs[2L] - yrs[1L]) * 0.5)
+        switch(period,
+          "year" = {
+            f <- as.factor(ifelse(time$year %in% years, sprintf("%04d", time$year), NA_character_))
+            n <- nlevels(f)
+            if (n > 0L) {
+              off <- self$cal$parse(paste0(levels(f), "-07-01"))$offset
+              last <- as.integer(levels(f)[n]) + 1L
+              bnds <- c(rep(paste0(levels(f)[1L], "-01-01"), n), rep(paste0(last, "-01-01"), n))
+            }
+          },
+          "season" = {
+            f <- as.factor(ifelse((time$month == 12L) & ((time$year + 1L) %in% years), "S1",
+                             ifelse((time$month < 12L) & (time$year %in% years), sprintf("S%d", time$month %/% 3L + 1L), NA_character_)))
+            if (nlevels(f) > 0L) {
+              s <- as.integer(substr(levels(f), 2, 2))
+              mid_s <- c("-01-16T12", "-04-16", "-07-16T12", "-10-16T12")
+              off <- self$cal$parse(paste0(mid_yr, mid_s[s]))$offset
+              bnds <- c(ifelse(s == 1L, sprintf("%d-12-01", yrs[1L] - 1L),
+                                        sprintf("%d-%02d-01", yrs[1L], (s - 1L) * 3L)),
+                        sprintf("%d-%02d-01", yrs[2L], s * 3L))
+            }
+          },
+          "quarter" = {
+            f <- as.factor(ifelse(time$year %in% years, sprintf("Q%d", (time$month - 1L) %/% 3L + 1L), NA_character_))
+            if (nlevels(f) > 0L) {
+              q <- as.integer(substr(levels(f), 2, 2))
+              mid_q <- c("-02-15", "-05-16T12", "-08-16T12", "-11-16")
+              off <- self$cal$parse(paste0(mid_yr, mid_q[q]))$offset
+              bnds <- c(sprintf("%d-%02d-01", yrs[1L], (q - 1L) * 3L + 1L),
+                        ifelse(q == 4L, sprintf("%d-01-01", yrs[2L] + 1L),
+                                        sprintf("%d-%02d-01", yrs[2L], q * 3L + 1L)))
+            }
+          },
+          "month" = {
+            f <- as.factor(ifelse(time$year %in% years, months[time$month], NA_character_))
+            if (nlevels(f) > 0L) {
+              mons <- as.numeric(levels(f))
+              mid_mon <- c("-16T12", "-15", "-16T12", "-16", "-16T12", "-16", "-16T12", "-16T12", "-16", "-16T12", "-16", "-16T12")
+              off <- self$cal$parse(paste0(mid_yr, "-", levels(f), mid_mon[mons]))$offset
+              bnds <- c(paste0(yrs[1L], "-", levels(f), "-01"),
+                        ifelse(mons == 12L, sprintf("%d-01-01", yrs[2L] + 1L),
+                                            sprintf("%d-%02d-01", yrs[2L], mons + 1L)))
+            }
+          },
+          "dekad" = {
+            f <- as.factor(ifelse(time$year %in% years, sprintf("D%02d", (time$month - 1L) * 3L + pmin.int((time$day - 1L) %/% 10L + 1L, 3L)), NA_character_))
+            if (nlevels(f) > 0L) {
+              dek <- as.integer(substr(levels(f), 2, 3))
+              mon <- (dek - 1L) %/% 3L + 1L
+              mid_dek <- c("06", "16", "26T12", "06", "16", "25",    "06", "16", "26T12", "06", "16", "26",
+                           "06", "16", "26T12", "06", "16", "26",    "06", "16", "26T12", "06", "16", "26T12",
+                           "06", "16", "26",    "06", "16", "26T12", "06", "16", "26",    "06", "16", "26T12")
+              off <- self$cal$parse(sprintf("%d-%02d-%s", mid_yr, mon, mid_dek[dek]))$offset
+              day <- c("01", "11", "21")
+              y2 <- rep(yrs[2L], length(dek))
+              m2 <- mon
+              ndx <- which(!(dek %% 3L))
+              m2[ndx] <- m2[ndx] + 1L
+              ndx <- which(dek == 36L)
+              y2[ndx] <- yrs[2L] + 1L
+              m2[ndx] <- 1L
+              bnds <- c(sprintf("%d-%02d-%s", yrs[1L], mon, day[(dek - 1L) %% 3L + 1L]),
+                        sprintf("%d-%02d-%s", y2, m2, day[dek %% 3L + 1L]))
+            }
+          },
+          "day" = {
+            f <- as.factor(ifelse(time$year %in% years, sprintf("%s-%02d", months[time$month], time$day), NA_character_))
+            if (nlevels(f) > 0L) {
+              mons <- as.integer(substr(levels(f), 1, 2))
+              days <- as.integer(substr(levels(f), 4, 5))
+              off <- self$cal$parse(sprintf("%d-%s-%02dT12", mid_yr, months[mons], days))$offset
+              # Add a day to the calendar for the final year
+              y2off1 <- self$cal$parse(paste0(yrs[2L], "-", levels(f)))$offset + CFt$units$per_day[self$cal$unit]
+              y2off1 <- self$cal$offsets2time(y2off1)
+              bnds <- c(sprintf("%d-%s-%02d", yrs[1L], months[mons], days),
+                        sprintf("%d-%02d-%02d", y2off1$year, y2off1$month, y2off1$day))
+            }
+          }
         )
-        f <- as.factor(f)
         attr(f, "era") <- length(years)
         attr(f, "period") <- period
-        attr(f, "CFTime") <- NULL
+        if (nlevels(f) > 0L) {
+          bnds <- matrix(self$cal$parse(bnds)$offset, nrow = 2L, byrow = TRUE)
+          attr(f, "CFTime") <- CFClimatology$new(self$cal$definition, self$cal$name, off, bnds)
+        }
         f
       })
       if (is.numeric(era)) out <- out[[1L]]
@@ -848,6 +923,27 @@ CFTime <- R6::R6Class("CFTime",
     unit = function(value) {
       if (missing(value))
         CFt$units$name[self$cal$unit]
+    },
+
+    #' @field friendlyClassName Character string with class name for display
+    #'   purposes.
+    friendlyClassName = function(value) {
+      if (missing(value))
+        "CFTime"
     }
   )
 )
+
+# ==============================================================================
+# S3 functions
+
+#' Compact display of a CFTime instance
+#' @param object A `CFTime` instance.
+#' @param ... Ignored.
+#' @export
+str.CFTime <- function(object, ...) {
+  cat(object$friendlyClassName, " with origin [", object$cal$definition,
+      "] using calendar [", object$cal$name,
+      "] having ", length(object$offsets), " offset values", sep = "")
+}
+

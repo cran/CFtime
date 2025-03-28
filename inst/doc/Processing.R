@@ -81,27 +81,27 @@ rownames(ensemble) <- rownames(ano[[1]][[1]])
 ensemble
 
 ## ----eval = FALSE-------------------------------------------------------------
-#  library(ncdfCF)
-#  library(abind)
-#  
-#  prepare_CORDEX <- function(fn, var, aoi) {
-#    data <- vector("list", length(fn))
-#    for (i in 1:length(fn)) {
-#      ds <- ncdfCF::open_ncdf(fn[i])
-#      if (i == 1) {
-#        # Get a CFTime instance from the first file
-#        t <- ds[["time"]]$time()
-#      } else {
-#        # Add offsets from the file and add to the CFTime instance
-#        t <- t + ds[["time"]]$time()$offsets
-#      }
-#  
-#      # Put the subsetted data array in the list
-#      data[[i]] <- ds[[var]]$subset(aoi = aoi)$array()
-#    }
-#  
-#    # Create a list for output with the CFTime instance and
-#    # the data bound in a single 3-dimensional array
-#    list(CFTime = t, data = abind(data, along = 3))
-#  }
+# library(ncdfCF)
+# library(abind)
+# 
+# prepare_CORDEX <- function(fn, var, aoi) {
+#   data <- vector("list", length(fn))
+#   for (i in 1:length(fn)) {
+#     ds <- ncdfCF::open_ncdf(fn[i])
+#     if (i == 1) {
+#       # Get a CFTime instance from the first file
+#       t <- ds[["time"]]$time()
+#     } else {
+#       # Add offsets from the file and add to the CFTime instance
+#       t <- t + ds[["time"]]$time()$offsets
+#     }
+# 
+#     # Put the subsetted data array in the list
+#     data[[i]] <- ds[[var]]$subset(aoi = aoi)$array()
+#   }
+# 
+#   # Create a list for output with the CFTime instance and
+#   # the data bound in a single 3-dimensional array
+#   list(CFTime = t, data = abind(data, along = 3))
+# }
 

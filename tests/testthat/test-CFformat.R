@@ -13,6 +13,10 @@ test_that("Creating timestamps", {
   expect_equal(nchar(as_timestamp(cf)[1]), 10L) # date string
   expect_equal(length(as_timestamp(cf, "date", TRUE)), 365L)
   expect_equal(length(as_timestamp(cf, "timestamp", TRUE)), 365L)
+  expect_equal(as_timestamp(cf), as.character(cf))
+
+  cf <- cf + 364.56764
+  expect_equal(cf$range()[2], "2001-12-31T13:37:24.096")
 })
 
 test_that("Using format()", {
@@ -21,7 +25,7 @@ test_that("Using format()", {
 
   cf <- cf + 0:364
 
-  expect_equal(format(cf)[1], "2001-01-01 18:10:30")      # format parameter missing
+  expect_equal(format(cf)[1], "2001-01-01T18:10:30")      # format parameter missing
   expect_error(format(cf, 123)) # format parameter must be character
   expect_error(format(cf, c("doesn't", "work", "either")))
 
@@ -33,7 +37,7 @@ test_that("Using format()", {
   expect_equal(format(cf, "%Od-%e-%I%p")[5], "05- 5-06PM")
 })
 
-test_that("CFfactor testing", {
+test_that("Factor testing", {
   # No offsets
   cf <- CFtime("days since 2000-01-01", "365_day")
   expect_error(CFfactor())
@@ -74,7 +78,7 @@ test_that("CFfactor testing", {
   lvls <- c(1L, 4L, 4L, 12L, 36L, 365L)
   expect_error(cf$factor("month", "bad"))
   for (p in 1:6) { # year, season, quarter, month, dekad, day
-    f <- CFfactor(cf, CFt$factor_periods[p], eras)
+    f <- cf$factor(CFt$factor_periods[p], eras)
     expect_type(f, "list")
     expect_equal(length(f), 4L)
     expect_equal(length(f$first), 7300L)
@@ -97,6 +101,13 @@ test_that("CFfactor testing", {
       expect_equal(length(levels(f$final3)), lvls[p])
       expect_equal(length(levels(f$outside)), 0L)
     }
+    lapply(1:3, function(n) {
+      t <- attr(f[[n]], "CFTime")
+      expect_true(inherits(t, "CFClimatology"))
+      expect_equal(t$years, matrix(c(2001, 2001, 2002, 2003, 2018, 2020), nrow = 2)[,n])
+      expect_equal(t$period, CFt$factor_periods[p])
+    })
+    expect_null(attr(f[[4]], "CFTime"))
   }
 
   # Single era value for all available periods
@@ -179,7 +190,15 @@ test_that("CFfactor testing", {
   expect_equal(x$double, c(180L, 184L, 184L, 182L)) # two full years
   expect_equal(x$final3, c(270L, 276L, 276L, 273L)) # three full years
   x <- unlist(CFfactor_coverage(cf, f, "relative"))
-  #expect_equal(x[1], 59 / 90). # works in the console but not here
+  expect_true(all(x[2L:12L] == 1L))
+
+  f <- CFfactor(cf, "quarter", eras)
+  expect_true(all(sapply(CFfactor_units(cf, f), function(x) {all(x == c(90L, 91L, 92L, 92L))})))
+  x <- CFfactor_coverage(cf, f, "absolute")
+  expect_equal(x$first[1L], 90L)
+  expect_equal(x$double, c(180L, 182L, 184L, 184L)) # two full years
+  expect_equal(x$final3, c(270L, 273L, 276L, 276L)) # three full years
+  x <- unlist(CFfactor_coverage(cf, f, "relative"))
   expect_true(all(x[2L:12L] == 1L))
 
   f <- CFfactor(cf, "month", eras)

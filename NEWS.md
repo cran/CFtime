@@ -1,3 +1,20 @@
+# CFtime 1.6.0
+
+* New class `CFClimatology` to manage climatological statistics. Method
+`CFTime$factor()` with an `era` argument will now have a `CFClimatology`
+instance attached to the attribute "CFTime" of its return value.
+* New class `CFCalendarNone` for a calendar with no annual cycle. Such a 
+calendar represents a single instant in time, which may be useful for 
+experiments on a fixed moment during the year.
+* `str()` for `CFTime` and `CFClimatology` gives compact information.
+* Fixed new `CFTime` instance for factor with a "day" or "dekad" period where
+the last factor level is not at the end of the year.
+* `CFTime$new()` with a single character string offset will generate only the
+single corresponding offset.
+* Test coverage near-complete.
+* Fixed inconsistent documentation for functions.
+* Minor code fixes.
+
 # CFtime 1.5.1
 
 * `CFTime$slice()` can now work with a single or multiple timestamp values.

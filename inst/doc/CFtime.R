@@ -6,7 +6,6 @@ knitr::opts_chunk$set(
 
 ## ----setup, include = FALSE---------------------------------------------------
 library(CFtime)
-library(ncdfCF)
 
 ## -----------------------------------------------------------------------------
 # POSIXt calculations on a standard calendar - INCORRECT
@@ -21,6 +20,9 @@ as_timestamp(CFtime("days since 1949-12-01", "360_day", 43289))
 (t <- CFtime("days since 1949-12-01", "360_day", 19830:90029))
 
 ## -----------------------------------------------------------------------------
+# install.packages("ncdfCF")
+library(ncdfCF)
+
 # Opening a data file that is included with the package.
 # Usually you would `list.files()` on a directory of your choice.
 fn <- list.files(path = system.file("extdata", package = "CFtime"), full.names = TRUE)[1]
@@ -35,19 +37,19 @@ fn <- list.files(path = system.file("extdata", package = "CFtime"), full.names =
 (t <- time$time())
 
 ## ----eval = FALSE-------------------------------------------------------------
-#  library(RNetCDF)
-#  nc <- open.nc(fn)
-#  att.get.nc(nc, -1, "Conventions")
-#  t <- CFtime(att.get.nc(nc, "time", "units"),
-#              att.get.nc(nc, "time", "calendar"),
-#              var.get.nc(nc, "time"))
-#  
-#  library(ncdf4)
-#  nc <- nc_open(fn)
-#  nc_att_get(nc, 0, "Conventions")
-#  t <- CFtime(nc$dim$time$units,
-#              nc$dim$time$calendar,
-#              nc$dim$time$vals)
+# library(RNetCDF)
+# nc <- open.nc(fn)
+# att.get.nc(nc, -1, "Conventions")
+# t <- CFtime(att.get.nc(nc, "time", "units"),
+#             att.get.nc(nc, "time", "calendar"),
+#             var.get.nc(nc, "time"))
+# 
+# library(ncdf4)
+# nc <- nc_open(fn)
+# nc_att_get(nc, 0, "Conventions")
+# t <- CFtime(nc$dim$time$units,
+#             nc$dim$time$calendar,
+#             nc$dim$time$vals)
 
 ## -----------------------------------------------------------------------------
 dates <- t$as_timestamp(format = "date")
@@ -94,8 +96,12 @@ t$factor_coverage(mon, "absolute")
 t$factor_coverage(mon, "relative")
 
 ## -----------------------------------------------------------------------------
-# 1970-01-01 is the origin of POSIXt
-difftime(as.POSIXct("2024-01-01"), as.POSIXct("1970-01-01"), units = "sec")
+# 1972-01-01 is the origin of UTC, when leap seconds came into existence
+difftime(as.POSIXct("2024-01-01"), as.POSIXct("1972-01-01"), units = "sec")
+
+# CFtime with a "utc" calendar
+t <- CFTime$new("seconds since 1972-01-01", "utc", "2024-01-01")
+t$offsets
 
 # Leap seconds in UTC
 .leap.seconds

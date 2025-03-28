@@ -343,7 +343,7 @@ indication.</li>
 <li><code>no_leap</code> / <code>365_day</code>: Fully conformant.</li>
 <li><code>all_leap</code> / <code>366_day</code>: Fully conformant.</li>
 <li><code>360_day</code>: Fully conformant.</li>
-<li><code>none</code>: Not implemented.</li>
+<li><code>none</code>: Fully conformant.</li>
 </ul>
 </div>
 <div id="leap-seconds" class="section level2">
@@ -366,11 +366,22 @@ attribute.</p>
 </div>
 <div id="time-coordinates-with-no-annual-cycle" class="section level2">
 <h2>4.4.4. Time Coordinates with no Annual Cycle</h2>
-<p>Not implemented.</p>
+<p>Fully conformant.</p>
 </div>
 <div id="explicitly-defined-calendar" class="section level2">
 <h2>4.4.5. Explicitly Defined Calendar</h2>
 <p>Not implemented.</p>
+</div>
+<div id="climatological-statistics" class="section level2">
+<h2>7.4. Climatological statistics</h2>
+<p>The time coordinate with climatological bounds is fully supported,
+with the exception of using year 0 in the <code>standard</code> and
+<code>julian</code> calendars to flag climatological data (which is a
+deprecated practice as per the CF Metadata Conventions.</p>
+<p>This package is agnostic to the underlying statistical operation that
+produced the <em>climatological time</em> so the
+<code>cell_methods</code> attribute is not inspected nor
+interpreted.</p>
 </div>
 
 
