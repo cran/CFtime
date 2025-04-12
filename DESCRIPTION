@@ -1,6 +1,6 @@
 Package: CFtime
 Title: Using CF-Compliant Calendars with Climate Projection Data
-Version: 1.6.0
+Version: 1.6.1
 Authors@R: 
     person("Patrick", "Van Laake", , "patrick@vanlaake.net", role = c("aut", "cre", "cph"))
 Description: Support for all calendars as specified in the Climate and Forecast 
@@ -28,8 +28,8 @@ Collate: 'api.R' 'CFCalendar.R' 'CFCalendar360.R' 'CFCalendar365.R'
         'CFtime-package.R' 'CFtime.R' 'deprecated.R' 'helpers.R'
         'zzz.R'
 NeedsCompilation: no
-Packaged: 2025-03-28 13:36:59 UTC; patrickvanlaake
+Packaged: 2025-04-12 10:44:30 UTC; patrickvanlaake
 Author: Patrick Van Laake [aut, cre, cph]
 Maintainer: Patrick Van Laake <patrick@vanlaake.net>
 Repository: CRAN
-Date/Publication: 2025-03-28 14:00:01 UTC
+Date/Publication: 2025-04-12 11:10:02 UTC

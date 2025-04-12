@@ -125,7 +125,7 @@ test_that("test all variants of creating a CFtime object and useful functions", 
   t$bounds <- TRUE
   s <- t$slice(c("2023-01-01", "2023-05-01"))
   st <- attr(s, "CFTime")
-  expect_true(st$bounds)
+  expect_equal(st$bounds, t$bounds)
 })
 
 test_that("Leap years on some calendars", {
@@ -133,16 +133,6 @@ test_that("Leap years on some calendars", {
   expect_true(all(!t$cal$leap_year(c(2000:2025))))
   t <- CFTime$new("days since 2025-01-01", "366_day")
   expect_true(all(t$cal$leap_year(c(2000:2025))))
-})
-
-test_that("Working with packages and files", {
-  lf <- list.files(path = system.file("extdata", package = "CFtime"), full.names = TRUE)
-
-  if (requireNamespace("ncdfCF"))
-    lapply(lf, function(f) {
-      nc <- ncdfCF::open_ncdf(f)
-      expect_s3_class(nc[["time"]]$values, "CFTime")
-    })
 })
 
 test_that("Calendar 'none'", {

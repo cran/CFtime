@@ -1,6 +1,7 @@
 # every release
  - update documentation: README, vignettes, package doc
  - update hyperlinks (to e.g. latest CF version)
+ - check deprecated items
 
 # 1.6
  - User-defined calendar
@@ -10,3 +11,11 @@
  - cut() needs to support "2 days" etc
  - filter() like tidyverse -> CFsubset
  - CFfactor() can use epochs with lower resolution such as [year, month] for 3-hr data: e.g. daily avg per month per epoch
+
+# Deprecation:
+ - Functions in deprecated.R
+ - Arguments:
+   - Use # DEPRECATED comment inside the function body detailing argument changes
+   - In the initial release, support use of the argument but drop documentation
+   - 6 months after release, issue a warning
+   - 3 months after warning, deprecate

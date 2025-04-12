@@ -528,7 +528,7 @@ consider any calendars other than “proleptic_gregorian”.</p>
 <span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>fn <span class="ot">&lt;-</span> <span class="fu">list.files</span>(<span class="at">path =</span> <span class="fu">system.file</span>(<span class="st">&quot;extdata&quot;</span>, <span class="at">package =</span> <span class="st">&quot;CFtime&quot;</span>), <span class="at">full.names =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span>]</span>
 <span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>(ds <span class="ot">&lt;-</span> ncdfCF<span class="sc">::</span><span class="fu">open_ncdf</span>(fn))</span>
 <span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt; &lt;Dataset&gt; pr_day_GFDL-ESM4_ssp245_r1i1p1f1_gr1_20150101-20991231_v20180701 </span></span>
-<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; Resource   : /private/var/folders/gs/s0mmlczn4l7bjbmwfrrhjlt80000gn/T/RtmpWcpnPe/Rinst121ef69011376/CFtime/extdata/pr_day_GFDL-ESM4_ssp245_r1i1p1f1_gr1_20150101-20991231_v20180701.nc </span></span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; Resource   : /private/var/folders/gs/s0mmlczn4l7bjbmwfrrhjlt80000gn/T/RtmpZnK4FW/Rinst1176b39b86316/CFtime/extdata/pr_day_GFDL-ESM4_ssp245_r1i1p1f1_gr1_20150101-20991231_v20180701.nc </span></span>
 <span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt; Format     : netcdf4 </span></span>
 <span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; Type       : generic netCDF data </span></span>
 <span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; Conventions: CF-1.7 CMIP-6.0 UGRID-1.0 </span></span>
@@ -539,145 +539,148 @@ consider any calendars other than “proleptic_gregorian”.</p>
 <span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt;  name long_name     units      data_type axes          </span></span>
 <span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt;  pr   Precipitation kg m-2 s-1 NC_FLOAT  lon, lat, time</span></span>
 <span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt; Axes:</span></span>
-<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt;  id axis name long_name     length</span></span>
-<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt;  0       bnds vertex number     2 </span></span>
-<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt;  1  Y    lat  latitude          1 </span></span>
-<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt;  2  T    time               31025 </span></span>
-<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt;  3  X    lon  longitude         1 </span></span>
-<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt;  values                                        unit                 </span></span>
-<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt;  [1 ... 2]                                                          </span></span>
-<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt;  [-37.5]                                       degrees_north        </span></span>
-<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt;  [2015-01-01T12:00:00 ... 2099-12-31T12:00:00] days since 1850-01-01</span></span>
-<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt;  [175.625]                                     degrees_east         </span></span>
-<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a><span class="co">#&gt; Attributes:</span></span>
-<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a><span class="co">#&gt;  id name                  type      length</span></span>
-<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a><span class="co">#&gt;   0 external_variables    NC_CHAR     9   </span></span>
-<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a><span class="co">#&gt;   1 history               NC_CHAR   124   </span></span>
-<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a><span class="co">#&gt;   2 table_id              NC_CHAR     3   </span></span>
-<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a><span class="co">#&gt;   3 activity_id           NC_CHAR    11   </span></span>
-<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a><span class="co">#&gt;   4 branch_method         NC_CHAR     8   </span></span>
-<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a><span class="co">#&gt;   5 branch_time_in_child  NC_DOUBLE   1   </span></span>
-<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a><span class="co">#&gt;   6 branch_time_in_parent NC_DOUBLE   1   </span></span>
-<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a><span class="co">#&gt;   7 comment               NC_CHAR    10   </span></span>
-<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a><span class="co">#&gt;   8 contact               NC_CHAR    32   </span></span>
-<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a><span class="co">#&gt;   9 Conventions           NC_CHAR    25   </span></span>
-<span id="cb3-44"><a href="#cb3-44" tabindex="-1"></a><span class="co">#&gt;  10 creation_date         NC_CHAR    20   </span></span>
-<span id="cb3-45"><a href="#cb3-45" tabindex="-1"></a><span class="co">#&gt;  11 data_specs_version    NC_CHAR     8   </span></span>
-<span id="cb3-46"><a href="#cb3-46" tabindex="-1"></a><span class="co">#&gt;  12 experiment            NC_CHAR    30   </span></span>
-<span id="cb3-47"><a href="#cb3-47" tabindex="-1"></a><span class="co">#&gt;  13 experiment_id         NC_CHAR     6   </span></span>
-<span id="cb3-48"><a href="#cb3-48" tabindex="-1"></a><span class="co">#&gt;  14 forcing_index         NC_INT      1   </span></span>
-<span id="cb3-49"><a href="#cb3-49" tabindex="-1"></a><span class="co">#&gt;  15 frequency             NC_CHAR     3   </span></span>
-<span id="cb3-50"><a href="#cb3-50" tabindex="-1"></a><span class="co">#&gt;  16 further_info_url      NC_CHAR    77   </span></span>
-<span id="cb3-51"><a href="#cb3-51" tabindex="-1"></a><span class="co">#&gt;  17 grid                  NC_CHAR    94   </span></span>
-<span id="cb3-52"><a href="#cb3-52" tabindex="-1"></a><span class="co">#&gt;  18 grid_label            NC_CHAR     3   </span></span>
-<span id="cb3-53"><a href="#cb3-53" tabindex="-1"></a><span class="co">#&gt;  19 initialization_index  NC_INT      1   </span></span>
-<span id="cb3-54"><a href="#cb3-54" tabindex="-1"></a><span class="co">#&gt;  20 institution           NC_CHAR   112   </span></span>
-<span id="cb3-55"><a href="#cb3-55" tabindex="-1"></a><span class="co">#&gt;  21 institution_id        NC_CHAR     9   </span></span>
-<span id="cb3-56"><a href="#cb3-56" tabindex="-1"></a><span class="co">#&gt;  22 license               NC_CHAR   805   </span></span>
-<span id="cb3-57"><a href="#cb3-57" tabindex="-1"></a><span class="co">#&gt;  23 mip_era               NC_CHAR     5   </span></span>
-<span id="cb3-58"><a href="#cb3-58" tabindex="-1"></a><span class="co">#&gt;  24 nominal_resolution    NC_CHAR     6   </span></span>
-<span id="cb3-59"><a href="#cb3-59" tabindex="-1"></a><span class="co">#&gt;  25 parent_activity_id    NC_CHAR     4   </span></span>
-<span id="cb3-60"><a href="#cb3-60" tabindex="-1"></a><span class="co">#&gt;  26 parent_experiment_id  NC_CHAR    10   </span></span>
-<span id="cb3-61"><a href="#cb3-61" tabindex="-1"></a><span class="co">#&gt;  27 parent_mip_era        NC_CHAR     5   </span></span>
-<span id="cb3-62"><a href="#cb3-62" tabindex="-1"></a><span class="co">#&gt;  28 parent_source_id      NC_CHAR     9   </span></span>
-<span id="cb3-63"><a href="#cb3-63" tabindex="-1"></a><span class="co">#&gt;  29 parent_time_units     NC_CHAR    19   </span></span>
-<span id="cb3-64"><a href="#cb3-64" tabindex="-1"></a><span class="co">#&gt;  30 parent_variant_label  NC_CHAR     8   </span></span>
-<span id="cb3-65"><a href="#cb3-65" tabindex="-1"></a><span class="co">#&gt;  31 physics_index         NC_INT      1   </span></span>
-<span id="cb3-66"><a href="#cb3-66" tabindex="-1"></a><span class="co">#&gt;  32 product               NC_CHAR    12   </span></span>
-<span id="cb3-67"><a href="#cb3-67" tabindex="-1"></a><span class="co">#&gt;  33 realization_index     NC_INT      1   </span></span>
-<span id="cb3-68"><a href="#cb3-68" tabindex="-1"></a><span class="co">#&gt;  34 realm                 NC_CHAR     5   </span></span>
-<span id="cb3-69"><a href="#cb3-69" tabindex="-1"></a><span class="co">#&gt;  35 source                NC_CHAR   560   </span></span>
-<span id="cb3-70"><a href="#cb3-70" tabindex="-1"></a><span class="co">#&gt;  36 source_id             NC_CHAR     9   </span></span>
-<span id="cb3-71"><a href="#cb3-71" tabindex="-1"></a><span class="co">#&gt;  37 source_type           NC_CHAR    18   </span></span>
-<span id="cb3-72"><a href="#cb3-72" tabindex="-1"></a><span class="co">#&gt;  38 sub_experiment        NC_CHAR     4   </span></span>
-<span id="cb3-73"><a href="#cb3-73" tabindex="-1"></a><span class="co">#&gt;  39 sub_experiment_id     NC_CHAR     4   </span></span>
-<span id="cb3-74"><a href="#cb3-74" tabindex="-1"></a><span class="co">#&gt;  40 title                 NC_CHAR    82   </span></span>
-<span id="cb3-75"><a href="#cb3-75" tabindex="-1"></a><span class="co">#&gt;  41 tracking_id           NC_CHAR    49   </span></span>
-<span id="cb3-76"><a href="#cb3-76" tabindex="-1"></a><span class="co">#&gt;  42 variable_id           NC_CHAR     2   </span></span>
-<span id="cb3-77"><a href="#cb3-77" tabindex="-1"></a><span class="co">#&gt;  43 variant_info          NC_CHAR     3   </span></span>
-<span id="cb3-78"><a href="#cb3-78" tabindex="-1"></a><span class="co">#&gt;  44 references            NC_CHAR    30   </span></span>
-<span id="cb3-79"><a href="#cb3-79" tabindex="-1"></a><span class="co">#&gt;  45 variant_label         NC_CHAR     8   </span></span>
-<span id="cb3-80"><a href="#cb3-80" tabindex="-1"></a><span class="co">#&gt;  value                                              </span></span>
-<span id="cb3-81"><a href="#cb3-81" tabindex="-1"></a><span class="co">#&gt;  areacella                                          </span></span>
-<span id="cb3-82"><a href="#cb3-82" tabindex="-1"></a><span class="co">#&gt;  File was processed by fremetar (GFDL analog of ... </span></span>
-<span id="cb3-83"><a href="#cb3-83" tabindex="-1"></a><span class="co">#&gt;  day                                                </span></span>
-<span id="cb3-84"><a href="#cb3-84" tabindex="-1"></a><span class="co">#&gt;  ScenarioMIP                                        </span></span>
-<span id="cb3-85"><a href="#cb3-85" tabindex="-1"></a><span class="co">#&gt;  standard                                           </span></span>
-<span id="cb3-86"><a href="#cb3-86" tabindex="-1"></a><span class="co">#&gt;  60225                                              </span></span>
-<span id="cb3-87"><a href="#cb3-87" tabindex="-1"></a><span class="co">#&gt;  60225                                              </span></span>
-<span id="cb3-88"><a href="#cb3-88" tabindex="-1"></a><span class="co">#&gt;  &lt;null ref&gt;                                         </span></span>
-<span id="cb3-89"><a href="#cb3-89" tabindex="-1"></a><span class="co">#&gt;  gfdl.climate.model.info@noaa.gov                   </span></span>
-<span id="cb3-90"><a href="#cb3-90" tabindex="-1"></a><span class="co">#&gt;  CF-1.7 CMIP-6.0 UGRID-1.0                          </span></span>
-<span id="cb3-91"><a href="#cb3-91" tabindex="-1"></a><span class="co">#&gt;  2019-06-18T05:29:00Z                               </span></span>
-<span id="cb3-92"><a href="#cb3-92" tabindex="-1"></a><span class="co">#&gt;  01.00.27                                           </span></span>
-<span id="cb3-93"><a href="#cb3-93" tabindex="-1"></a><span class="co">#&gt;  update of RCP4.5 based on SSP2                     </span></span>
-<span id="cb3-94"><a href="#cb3-94" tabindex="-1"></a><span class="co">#&gt;  ssp245                                             </span></span>
-<span id="cb3-95"><a href="#cb3-95" tabindex="-1"></a><span class="co">#&gt;  1                                                  </span></span>
-<span id="cb3-96"><a href="#cb3-96" tabindex="-1"></a><span class="co">#&gt;  day                                                </span></span>
-<span id="cb3-97"><a href="#cb3-97" tabindex="-1"></a><span class="co">#&gt;  https://furtherinfo.es-doc.org/CMIP6.NOAA-GFDL.... </span></span>
-<span id="cb3-98"><a href="#cb3-98" tabindex="-1"></a><span class="co">#&gt;  atmos data regridded from Cubed-sphere (c96) to... </span></span>
-<span id="cb3-99"><a href="#cb3-99" tabindex="-1"></a><span class="co">#&gt;  gr1                                                </span></span>
-<span id="cb3-100"><a href="#cb3-100" tabindex="-1"></a><span class="co">#&gt;  1                                                  </span></span>
-<span id="cb3-101"><a href="#cb3-101" tabindex="-1"></a><span class="co">#&gt;  National Oceanic and Atmospheric Administration... </span></span>
-<span id="cb3-102"><a href="#cb3-102" tabindex="-1"></a><span class="co">#&gt;  NOAA-GFDL                                          </span></span>
-<span id="cb3-103"><a href="#cb3-103" tabindex="-1"></a><span class="co">#&gt;  CMIP6 model data produced by NOAA-GFDL is licen... </span></span>
-<span id="cb3-104"><a href="#cb3-104" tabindex="-1"></a><span class="co">#&gt;  CMIP6                                              </span></span>
-<span id="cb3-105"><a href="#cb3-105" tabindex="-1"></a><span class="co">#&gt;  100 km                                             </span></span>
-<span id="cb3-106"><a href="#cb3-106" tabindex="-1"></a><span class="co">#&gt;  CMIP                                               </span></span>
-<span id="cb3-107"><a href="#cb3-107" tabindex="-1"></a><span class="co">#&gt;  historical                                         </span></span>
-<span id="cb3-108"><a href="#cb3-108" tabindex="-1"></a><span class="co">#&gt;  CMIP6                                              </span></span>
-<span id="cb3-109"><a href="#cb3-109" tabindex="-1"></a><span class="co">#&gt;  GFDL-ESM4                                          </span></span>
-<span id="cb3-110"><a href="#cb3-110" tabindex="-1"></a><span class="co">#&gt;  days since 1850-1-1                                </span></span>
-<span id="cb3-111"><a href="#cb3-111" tabindex="-1"></a><span class="co">#&gt;  r1i1p1f1                                           </span></span>
-<span id="cb3-112"><a href="#cb3-112" tabindex="-1"></a><span class="co">#&gt;  1                                                  </span></span>
-<span id="cb3-113"><a href="#cb3-113" tabindex="-1"></a><span class="co">#&gt;  model-output                                       </span></span>
+<span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt; External variable: areacella</span></span>
+<span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-22"><a href="#cb3-22" tabindex="-1"></a><span class="co">#&gt; Axes:</span></span>
+<span id="cb3-23"><a href="#cb3-23" tabindex="-1"></a><span class="co">#&gt;  id axis name long_name     length</span></span>
+<span id="cb3-24"><a href="#cb3-24" tabindex="-1"></a><span class="co">#&gt;  0       bnds vertex number     2 </span></span>
+<span id="cb3-25"><a href="#cb3-25" tabindex="-1"></a><span class="co">#&gt;  1  Y    lat  latitude          1 </span></span>
+<span id="cb3-26"><a href="#cb3-26" tabindex="-1"></a><span class="co">#&gt;  2  T    time               31025 </span></span>
+<span id="cb3-27"><a href="#cb3-27" tabindex="-1"></a><span class="co">#&gt;  3  X    lon  longitude         1 </span></span>
+<span id="cb3-28"><a href="#cb3-28" tabindex="-1"></a><span class="co">#&gt;  values                                        unit                 </span></span>
+<span id="cb3-29"><a href="#cb3-29" tabindex="-1"></a><span class="co">#&gt;  [1 ... 2]                                                          </span></span>
+<span id="cb3-30"><a href="#cb3-30" tabindex="-1"></a><span class="co">#&gt;  [-37.5]                                       degrees_north        </span></span>
+<span id="cb3-31"><a href="#cb3-31" tabindex="-1"></a><span class="co">#&gt;  [2015-01-01T12:00:00 ... 2099-12-31T12:00:00] days since 1850-01-01</span></span>
+<span id="cb3-32"><a href="#cb3-32" tabindex="-1"></a><span class="co">#&gt;  [175.625]                                     degrees_east         </span></span>
+<span id="cb3-33"><a href="#cb3-33" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-34"><a href="#cb3-34" tabindex="-1"></a><span class="co">#&gt; Attributes:</span></span>
+<span id="cb3-35"><a href="#cb3-35" tabindex="-1"></a><span class="co">#&gt;  id name                  type      length</span></span>
+<span id="cb3-36"><a href="#cb3-36" tabindex="-1"></a><span class="co">#&gt;   0 external_variables    NC_CHAR     9   </span></span>
+<span id="cb3-37"><a href="#cb3-37" tabindex="-1"></a><span class="co">#&gt;   1 history               NC_CHAR   124   </span></span>
+<span id="cb3-38"><a href="#cb3-38" tabindex="-1"></a><span class="co">#&gt;   2 table_id              NC_CHAR     3   </span></span>
+<span id="cb3-39"><a href="#cb3-39" tabindex="-1"></a><span class="co">#&gt;   3 activity_id           NC_CHAR    11   </span></span>
+<span id="cb3-40"><a href="#cb3-40" tabindex="-1"></a><span class="co">#&gt;   4 branch_method         NC_CHAR     8   </span></span>
+<span id="cb3-41"><a href="#cb3-41" tabindex="-1"></a><span class="co">#&gt;   5 branch_time_in_child  NC_DOUBLE   1   </span></span>
+<span id="cb3-42"><a href="#cb3-42" tabindex="-1"></a><span class="co">#&gt;   6 branch_time_in_parent NC_DOUBLE   1   </span></span>
+<span id="cb3-43"><a href="#cb3-43" tabindex="-1"></a><span class="co">#&gt;   7 comment               NC_CHAR    10   </span></span>
+<span id="cb3-44"><a href="#cb3-44" tabindex="-1"></a><span class="co">#&gt;   8 contact               NC_CHAR    32   </span></span>
+<span id="cb3-45"><a href="#cb3-45" tabindex="-1"></a><span class="co">#&gt;   9 Conventions           NC_CHAR    25   </span></span>
+<span id="cb3-46"><a href="#cb3-46" tabindex="-1"></a><span class="co">#&gt;  10 creation_date         NC_CHAR    20   </span></span>
+<span id="cb3-47"><a href="#cb3-47" tabindex="-1"></a><span class="co">#&gt;  11 data_specs_version    NC_CHAR     8   </span></span>
+<span id="cb3-48"><a href="#cb3-48" tabindex="-1"></a><span class="co">#&gt;  12 experiment            NC_CHAR    30   </span></span>
+<span id="cb3-49"><a href="#cb3-49" tabindex="-1"></a><span class="co">#&gt;  13 experiment_id         NC_CHAR     6   </span></span>
+<span id="cb3-50"><a href="#cb3-50" tabindex="-1"></a><span class="co">#&gt;  14 forcing_index         NC_INT      1   </span></span>
+<span id="cb3-51"><a href="#cb3-51" tabindex="-1"></a><span class="co">#&gt;  15 frequency             NC_CHAR     3   </span></span>
+<span id="cb3-52"><a href="#cb3-52" tabindex="-1"></a><span class="co">#&gt;  16 further_info_url      NC_CHAR    77   </span></span>
+<span id="cb3-53"><a href="#cb3-53" tabindex="-1"></a><span class="co">#&gt;  17 grid                  NC_CHAR    94   </span></span>
+<span id="cb3-54"><a href="#cb3-54" tabindex="-1"></a><span class="co">#&gt;  18 grid_label            NC_CHAR     3   </span></span>
+<span id="cb3-55"><a href="#cb3-55" tabindex="-1"></a><span class="co">#&gt;  19 initialization_index  NC_INT      1   </span></span>
+<span id="cb3-56"><a href="#cb3-56" tabindex="-1"></a><span class="co">#&gt;  20 institution           NC_CHAR   112   </span></span>
+<span id="cb3-57"><a href="#cb3-57" tabindex="-1"></a><span class="co">#&gt;  21 institution_id        NC_CHAR     9   </span></span>
+<span id="cb3-58"><a href="#cb3-58" tabindex="-1"></a><span class="co">#&gt;  22 license               NC_CHAR   805   </span></span>
+<span id="cb3-59"><a href="#cb3-59" tabindex="-1"></a><span class="co">#&gt;  23 mip_era               NC_CHAR     5   </span></span>
+<span id="cb3-60"><a href="#cb3-60" tabindex="-1"></a><span class="co">#&gt;  24 nominal_resolution    NC_CHAR     6   </span></span>
+<span id="cb3-61"><a href="#cb3-61" tabindex="-1"></a><span class="co">#&gt;  25 parent_activity_id    NC_CHAR     4   </span></span>
+<span id="cb3-62"><a href="#cb3-62" tabindex="-1"></a><span class="co">#&gt;  26 parent_experiment_id  NC_CHAR    10   </span></span>
+<span id="cb3-63"><a href="#cb3-63" tabindex="-1"></a><span class="co">#&gt;  27 parent_mip_era        NC_CHAR     5   </span></span>
+<span id="cb3-64"><a href="#cb3-64" tabindex="-1"></a><span class="co">#&gt;  28 parent_source_id      NC_CHAR     9   </span></span>
+<span id="cb3-65"><a href="#cb3-65" tabindex="-1"></a><span class="co">#&gt;  29 parent_time_units     NC_CHAR    19   </span></span>
+<span id="cb3-66"><a href="#cb3-66" tabindex="-1"></a><span class="co">#&gt;  30 parent_variant_label  NC_CHAR     8   </span></span>
+<span id="cb3-67"><a href="#cb3-67" tabindex="-1"></a><span class="co">#&gt;  31 physics_index         NC_INT      1   </span></span>
+<span id="cb3-68"><a href="#cb3-68" tabindex="-1"></a><span class="co">#&gt;  32 product               NC_CHAR    12   </span></span>
+<span id="cb3-69"><a href="#cb3-69" tabindex="-1"></a><span class="co">#&gt;  33 realization_index     NC_INT      1   </span></span>
+<span id="cb3-70"><a href="#cb3-70" tabindex="-1"></a><span class="co">#&gt;  34 realm                 NC_CHAR     5   </span></span>
+<span id="cb3-71"><a href="#cb3-71" tabindex="-1"></a><span class="co">#&gt;  35 source                NC_CHAR   560   </span></span>
+<span id="cb3-72"><a href="#cb3-72" tabindex="-1"></a><span class="co">#&gt;  36 source_id             NC_CHAR     9   </span></span>
+<span id="cb3-73"><a href="#cb3-73" tabindex="-1"></a><span class="co">#&gt;  37 source_type           NC_CHAR    18   </span></span>
+<span id="cb3-74"><a href="#cb3-74" tabindex="-1"></a><span class="co">#&gt;  38 sub_experiment        NC_CHAR     4   </span></span>
+<span id="cb3-75"><a href="#cb3-75" tabindex="-1"></a><span class="co">#&gt;  39 sub_experiment_id     NC_CHAR     4   </span></span>
+<span id="cb3-76"><a href="#cb3-76" tabindex="-1"></a><span class="co">#&gt;  40 title                 NC_CHAR    82   </span></span>
+<span id="cb3-77"><a href="#cb3-77" tabindex="-1"></a><span class="co">#&gt;  41 tracking_id           NC_CHAR    49   </span></span>
+<span id="cb3-78"><a href="#cb3-78" tabindex="-1"></a><span class="co">#&gt;  42 variable_id           NC_CHAR     2   </span></span>
+<span id="cb3-79"><a href="#cb3-79" tabindex="-1"></a><span class="co">#&gt;  43 variant_info          NC_CHAR     3   </span></span>
+<span id="cb3-80"><a href="#cb3-80" tabindex="-1"></a><span class="co">#&gt;  44 references            NC_CHAR    30   </span></span>
+<span id="cb3-81"><a href="#cb3-81" tabindex="-1"></a><span class="co">#&gt;  45 variant_label         NC_CHAR     8   </span></span>
+<span id="cb3-82"><a href="#cb3-82" tabindex="-1"></a><span class="co">#&gt;  value                                              </span></span>
+<span id="cb3-83"><a href="#cb3-83" tabindex="-1"></a><span class="co">#&gt;  areacella                                          </span></span>
+<span id="cb3-84"><a href="#cb3-84" tabindex="-1"></a><span class="co">#&gt;  File was processed by fremetar (GFDL analog of ... </span></span>
+<span id="cb3-85"><a href="#cb3-85" tabindex="-1"></a><span class="co">#&gt;  day                                                </span></span>
+<span id="cb3-86"><a href="#cb3-86" tabindex="-1"></a><span class="co">#&gt;  ScenarioMIP                                        </span></span>
+<span id="cb3-87"><a href="#cb3-87" tabindex="-1"></a><span class="co">#&gt;  standard                                           </span></span>
+<span id="cb3-88"><a href="#cb3-88" tabindex="-1"></a><span class="co">#&gt;  60225                                              </span></span>
+<span id="cb3-89"><a href="#cb3-89" tabindex="-1"></a><span class="co">#&gt;  60225                                              </span></span>
+<span id="cb3-90"><a href="#cb3-90" tabindex="-1"></a><span class="co">#&gt;  &lt;null ref&gt;                                         </span></span>
+<span id="cb3-91"><a href="#cb3-91" tabindex="-1"></a><span class="co">#&gt;  gfdl.climate.model.info@noaa.gov                   </span></span>
+<span id="cb3-92"><a href="#cb3-92" tabindex="-1"></a><span class="co">#&gt;  CF-1.7 CMIP-6.0 UGRID-1.0                          </span></span>
+<span id="cb3-93"><a href="#cb3-93" tabindex="-1"></a><span class="co">#&gt;  2019-06-18T05:29:00Z                               </span></span>
+<span id="cb3-94"><a href="#cb3-94" tabindex="-1"></a><span class="co">#&gt;  01.00.27                                           </span></span>
+<span id="cb3-95"><a href="#cb3-95" tabindex="-1"></a><span class="co">#&gt;  update of RCP4.5 based on SSP2                     </span></span>
+<span id="cb3-96"><a href="#cb3-96" tabindex="-1"></a><span class="co">#&gt;  ssp245                                             </span></span>
+<span id="cb3-97"><a href="#cb3-97" tabindex="-1"></a><span class="co">#&gt;  1                                                  </span></span>
+<span id="cb3-98"><a href="#cb3-98" tabindex="-1"></a><span class="co">#&gt;  day                                                </span></span>
+<span id="cb3-99"><a href="#cb3-99" tabindex="-1"></a><span class="co">#&gt;  https://furtherinfo.es-doc.org/CMIP6.NOAA-GFDL.... </span></span>
+<span id="cb3-100"><a href="#cb3-100" tabindex="-1"></a><span class="co">#&gt;  atmos data regridded from Cubed-sphere (c96) to... </span></span>
+<span id="cb3-101"><a href="#cb3-101" tabindex="-1"></a><span class="co">#&gt;  gr1                                                </span></span>
+<span id="cb3-102"><a href="#cb3-102" tabindex="-1"></a><span class="co">#&gt;  1                                                  </span></span>
+<span id="cb3-103"><a href="#cb3-103" tabindex="-1"></a><span class="co">#&gt;  National Oceanic and Atmospheric Administration... </span></span>
+<span id="cb3-104"><a href="#cb3-104" tabindex="-1"></a><span class="co">#&gt;  NOAA-GFDL                                          </span></span>
+<span id="cb3-105"><a href="#cb3-105" tabindex="-1"></a><span class="co">#&gt;  CMIP6 model data produced by NOAA-GFDL is licen... </span></span>
+<span id="cb3-106"><a href="#cb3-106" tabindex="-1"></a><span class="co">#&gt;  CMIP6                                              </span></span>
+<span id="cb3-107"><a href="#cb3-107" tabindex="-1"></a><span class="co">#&gt;  100 km                                             </span></span>
+<span id="cb3-108"><a href="#cb3-108" tabindex="-1"></a><span class="co">#&gt;  CMIP                                               </span></span>
+<span id="cb3-109"><a href="#cb3-109" tabindex="-1"></a><span class="co">#&gt;  historical                                         </span></span>
+<span id="cb3-110"><a href="#cb3-110" tabindex="-1"></a><span class="co">#&gt;  CMIP6                                              </span></span>
+<span id="cb3-111"><a href="#cb3-111" tabindex="-1"></a><span class="co">#&gt;  GFDL-ESM4                                          </span></span>
+<span id="cb3-112"><a href="#cb3-112" tabindex="-1"></a><span class="co">#&gt;  days since 1850-1-1                                </span></span>
+<span id="cb3-113"><a href="#cb3-113" tabindex="-1"></a><span class="co">#&gt;  r1i1p1f1                                           </span></span>
 <span id="cb3-114"><a href="#cb3-114" tabindex="-1"></a><span class="co">#&gt;  1                                                  </span></span>
-<span id="cb3-115"><a href="#cb3-115" tabindex="-1"></a><span class="co">#&gt;  atmos                                              </span></span>
-<span id="cb3-116"><a href="#cb3-116" tabindex="-1"></a><span class="co">#&gt;  GFDL-ESM4 (2018):\natmos: GFDL-AM4.1 (Cubed-sphe...</span></span>
-<span id="cb3-117"><a href="#cb3-117" tabindex="-1"></a><span class="co">#&gt;  GFDL-ESM4                                          </span></span>
-<span id="cb3-118"><a href="#cb3-118" tabindex="-1"></a><span class="co">#&gt;  AOGCM AER CHEM BGC                                 </span></span>
-<span id="cb3-119"><a href="#cb3-119" tabindex="-1"></a><span class="co">#&gt;  none                                               </span></span>
-<span id="cb3-120"><a href="#cb3-120" tabindex="-1"></a><span class="co">#&gt;  none                                               </span></span>
-<span id="cb3-121"><a href="#cb3-121" tabindex="-1"></a><span class="co">#&gt;  NOAA GFDL GFDL-ESM4 model output prepared for C... </span></span>
-<span id="cb3-122"><a href="#cb3-122" tabindex="-1"></a><span class="co">#&gt;  hdl:21.14100/48767401-8960-4864-8738-e64640bef71d  </span></span>
-<span id="cb3-123"><a href="#cb3-123" tabindex="-1"></a><span class="co">#&gt;  pr                                                 </span></span>
-<span id="cb3-124"><a href="#cb3-124" tabindex="-1"></a><span class="co">#&gt;  N/A                                                </span></span>
-<span id="cb3-125"><a href="#cb3-125" tabindex="-1"></a><span class="co">#&gt;  see further_info_url attribute                     </span></span>
-<span id="cb3-126"><a href="#cb3-126" tabindex="-1"></a><span class="co">#&gt;  r1i1p1f1</span></span>
-<span id="cb3-127"><a href="#cb3-127" tabindex="-1"></a></span>
-<span id="cb3-128"><a href="#cb3-128" tabindex="-1"></a><span class="co"># &quot;Conventions&quot; global attribute must have a string like &quot;CF-1.*&quot; for this package to work reliably</span></span>
+<span id="cb3-115"><a href="#cb3-115" tabindex="-1"></a><span class="co">#&gt;  model-output                                       </span></span>
+<span id="cb3-116"><a href="#cb3-116" tabindex="-1"></a><span class="co">#&gt;  1                                                  </span></span>
+<span id="cb3-117"><a href="#cb3-117" tabindex="-1"></a><span class="co">#&gt;  atmos                                              </span></span>
+<span id="cb3-118"><a href="#cb3-118" tabindex="-1"></a><span class="co">#&gt;  GFDL-ESM4 (2018):\natmos: GFDL-AM4.1 (Cubed-sphe...</span></span>
+<span id="cb3-119"><a href="#cb3-119" tabindex="-1"></a><span class="co">#&gt;  GFDL-ESM4                                          </span></span>
+<span id="cb3-120"><a href="#cb3-120" tabindex="-1"></a><span class="co">#&gt;  AOGCM AER CHEM BGC                                 </span></span>
+<span id="cb3-121"><a href="#cb3-121" tabindex="-1"></a><span class="co">#&gt;  none                                               </span></span>
+<span id="cb3-122"><a href="#cb3-122" tabindex="-1"></a><span class="co">#&gt;  none                                               </span></span>
+<span id="cb3-123"><a href="#cb3-123" tabindex="-1"></a><span class="co">#&gt;  NOAA GFDL GFDL-ESM4 model output prepared for C... </span></span>
+<span id="cb3-124"><a href="#cb3-124" tabindex="-1"></a><span class="co">#&gt;  hdl:21.14100/48767401-8960-4864-8738-e64640bef71d  </span></span>
+<span id="cb3-125"><a href="#cb3-125" tabindex="-1"></a><span class="co">#&gt;  pr                                                 </span></span>
+<span id="cb3-126"><a href="#cb3-126" tabindex="-1"></a><span class="co">#&gt;  N/A                                                </span></span>
+<span id="cb3-127"><a href="#cb3-127" tabindex="-1"></a><span class="co">#&gt;  see further_info_url attribute                     </span></span>
+<span id="cb3-128"><a href="#cb3-128" tabindex="-1"></a><span class="co">#&gt;  r1i1p1f1</span></span>
 <span id="cb3-129"><a href="#cb3-129" tabindex="-1"></a></span>
-<span id="cb3-130"><a href="#cb3-130" tabindex="-1"></a><span class="co"># Look at the &quot;time&quot; axis</span></span>
-<span id="cb3-131"><a href="#cb3-131" tabindex="-1"></a>(time <span class="ot">&lt;-</span> ds[[<span class="st">&quot;time&quot;</span>]])</span>
-<span id="cb3-132"><a href="#cb3-132" tabindex="-1"></a><span class="co">#&gt; &lt;Time axis&gt; [2] time</span></span>
-<span id="cb3-133"><a href="#cb3-133" tabindex="-1"></a><span class="co">#&gt; Length   : 31025</span></span>
-<span id="cb3-134"><a href="#cb3-134" tabindex="-1"></a><span class="co">#&gt; Axis     : T </span></span>
-<span id="cb3-135"><a href="#cb3-135" tabindex="-1"></a><span class="co">#&gt; Calendar : noleap </span></span>
-<span id="cb3-136"><a href="#cb3-136" tabindex="-1"></a><span class="co">#&gt; Range    : 2015-01-01T12:00:00 ... 2099-12-31T12:00:00 (days) </span></span>
-<span id="cb3-137"><a href="#cb3-137" tabindex="-1"></a><span class="co">#&gt; Bounds   : 2015-01-01 ... 2100-01-01 </span></span>
-<span id="cb3-138"><a href="#cb3-138" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb3-139"><a href="#cb3-139" tabindex="-1"></a><span class="co">#&gt; Attributes:</span></span>
-<span id="cb3-140"><a href="#cb3-140" tabindex="-1"></a><span class="co">#&gt;  id name          type    length value                </span></span>
-<span id="cb3-141"><a href="#cb3-141" tabindex="-1"></a><span class="co">#&gt;  0  long_name     NC_CHAR  4     time                 </span></span>
-<span id="cb3-142"><a href="#cb3-142" tabindex="-1"></a><span class="co">#&gt;  1  axis          NC_CHAR  1     T                    </span></span>
-<span id="cb3-143"><a href="#cb3-143" tabindex="-1"></a><span class="co">#&gt;  2  calendar_type NC_CHAR  6     noleap               </span></span>
-<span id="cb3-144"><a href="#cb3-144" tabindex="-1"></a><span class="co">#&gt;  3  bounds        NC_CHAR  9     time_bnds            </span></span>
-<span id="cb3-145"><a href="#cb3-145" tabindex="-1"></a><span class="co">#&gt;  4  standard_name NC_CHAR  4     time                 </span></span>
-<span id="cb3-146"><a href="#cb3-146" tabindex="-1"></a><span class="co">#&gt;  5  description   NC_CHAR 13     Temporal mean        </span></span>
-<span id="cb3-147"><a href="#cb3-147" tabindex="-1"></a><span class="co">#&gt;  6  units         NC_CHAR 21     days since 1850-01-01</span></span>
-<span id="cb3-148"><a href="#cb3-148" tabindex="-1"></a><span class="co">#&gt;  7  calendar      NC_CHAR  6     noleap</span></span>
-<span id="cb3-149"><a href="#cb3-149" tabindex="-1"></a></span>
-<span id="cb3-150"><a href="#cb3-150" tabindex="-1"></a><span class="co"># Get the CFTime instance from the &quot;time&quot; axis</span></span>
-<span id="cb3-151"><a href="#cb3-151" tabindex="-1"></a>(t <span class="ot">&lt;-</span> time<span class="sc">$</span><span class="fu">time</span>())</span>
-<span id="cb3-152"><a href="#cb3-152" tabindex="-1"></a><span class="co">#&gt; CF calendar:</span></span>
-<span id="cb3-153"><a href="#cb3-153" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1850-01-01T00:00:00</span></span>
-<span id="cb3-154"><a href="#cb3-154" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
-<span id="cb3-155"><a href="#cb3-155" tabindex="-1"></a><span class="co">#&gt;   Type    : noleap</span></span>
-<span id="cb3-156"><a href="#cb3-156" tabindex="-1"></a><span class="co">#&gt; Time series:</span></span>
-<span id="cb3-157"><a href="#cb3-157" tabindex="-1"></a><span class="co">#&gt;   Elements: [2015-01-01T12:00:00 .. 2099-12-31T12:00:00] (average of 1.000000 days between 31025 elements)</span></span>
-<span id="cb3-158"><a href="#cb3-158" tabindex="-1"></a><span class="co">#&gt;   Bounds  : irregular</span></span></code></pre></div>
+<span id="cb3-130"><a href="#cb3-130" tabindex="-1"></a><span class="co"># &quot;Conventions&quot; global attribute must have a string like &quot;CF-1.*&quot; for this package to work reliably</span></span>
+<span id="cb3-131"><a href="#cb3-131" tabindex="-1"></a></span>
+<span id="cb3-132"><a href="#cb3-132" tabindex="-1"></a><span class="co"># Look at the &quot;time&quot; axis</span></span>
+<span id="cb3-133"><a href="#cb3-133" tabindex="-1"></a>(time <span class="ot">&lt;-</span> ds[[<span class="st">&quot;time&quot;</span>]])</span>
+<span id="cb3-134"><a href="#cb3-134" tabindex="-1"></a><span class="co">#&gt; &lt;Time axis&gt; [2] time</span></span>
+<span id="cb3-135"><a href="#cb3-135" tabindex="-1"></a><span class="co">#&gt; Length     : 31025</span></span>
+<span id="cb3-136"><a href="#cb3-136" tabindex="-1"></a><span class="co">#&gt; Axis       : T </span></span>
+<span id="cb3-137"><a href="#cb3-137" tabindex="-1"></a><span class="co">#&gt; Calendar   : noleap </span></span>
+<span id="cb3-138"><a href="#cb3-138" tabindex="-1"></a><span class="co">#&gt; Range      : 2015-01-01T12:00:00 ... 2099-12-31T12:00:00 (days) </span></span>
+<span id="cb3-139"><a href="#cb3-139" tabindex="-1"></a><span class="co">#&gt; Bounds     : 2015-01-01 ... 2100-01-01 </span></span>
+<span id="cb3-140"><a href="#cb3-140" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb3-141"><a href="#cb3-141" tabindex="-1"></a><span class="co">#&gt; Attributes:</span></span>
+<span id="cb3-142"><a href="#cb3-142" tabindex="-1"></a><span class="co">#&gt;  id name          type      length value                </span></span>
+<span id="cb3-143"><a href="#cb3-143" tabindex="-1"></a><span class="co">#&gt;  0  long_name     NC_CHAR    4     time                 </span></span>
+<span id="cb3-144"><a href="#cb3-144" tabindex="-1"></a><span class="co">#&gt;  1  axis          NC_CHAR    1     T                    </span></span>
+<span id="cb3-145"><a href="#cb3-145" tabindex="-1"></a><span class="co">#&gt;  2  calendar_type NC_CHAR    6     noleap               </span></span>
+<span id="cb3-146"><a href="#cb3-146" tabindex="-1"></a><span class="co">#&gt;  3  bounds        NC_CHAR    9     time_bnds            </span></span>
+<span id="cb3-147"><a href="#cb3-147" tabindex="-1"></a><span class="co">#&gt;  4  standard_name NC_CHAR    4     time                 </span></span>
+<span id="cb3-148"><a href="#cb3-148" tabindex="-1"></a><span class="co">#&gt;  5  description   NC_CHAR   13     Temporal mean        </span></span>
+<span id="cb3-149"><a href="#cb3-149" tabindex="-1"></a><span class="co">#&gt;  6  units         NC_CHAR   21     days since 1850-01-01</span></span>
+<span id="cb3-150"><a href="#cb3-150" tabindex="-1"></a><span class="co">#&gt;  7  calendar      NC_CHAR    6     noleap               </span></span>
+<span id="cb3-151"><a href="#cb3-151" tabindex="-1"></a><span class="co">#&gt;  8  actual_range  NC_DOUBLE  2     60225.5, 91249.5</span></span>
+<span id="cb3-152"><a href="#cb3-152" tabindex="-1"></a></span>
+<span id="cb3-153"><a href="#cb3-153" tabindex="-1"></a><span class="co"># Get the CFTime instance from the &quot;time&quot; axis</span></span>
+<span id="cb3-154"><a href="#cb3-154" tabindex="-1"></a>(t <span class="ot">&lt;-</span> time<span class="sc">$</span><span class="fu">time</span>())</span>
+<span id="cb3-155"><a href="#cb3-155" tabindex="-1"></a><span class="co">#&gt; CF calendar:</span></span>
+<span id="cb3-156"><a href="#cb3-156" tabindex="-1"></a><span class="co">#&gt;   Origin  : 1850-01-01T00:00:00</span></span>
+<span id="cb3-157"><a href="#cb3-157" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
+<span id="cb3-158"><a href="#cb3-158" tabindex="-1"></a><span class="co">#&gt;   Type    : noleap</span></span>
+<span id="cb3-159"><a href="#cb3-159" tabindex="-1"></a><span class="co">#&gt; Time series:</span></span>
+<span id="cb3-160"><a href="#cb3-160" tabindex="-1"></a><span class="co">#&gt;   Elements: [2015-01-01T12:00:00 .. 2099-12-31T12:00:00] (average of 1.000000 days between 31025 elements)</span></span>
+<span id="cb3-161"><a href="#cb3-161" tabindex="-1"></a><span class="co">#&gt;   Bounds  : set</span></span></code></pre></div>
 <p>You can see from the global attribute “Conventions” that the file
 adheres to the CF Metadata Conventions, among others. According to the
 CF conventions, <code>units</code> and <code>calendar</code> are
@@ -797,7 +800,7 @@ that <code>CFTime</code> instance as an attribute:</p>
 <span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt;   Type    : noleap</span></span>
 <span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt; Time series:</span></span>
 <span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt;   Elements: [2015-01-06T00:00:00 .. 2099-12-26T12:00:00] (average of 10.138771 days between 3060 elements)</span></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt;   Bounds  : regular and consecutive</span></span></code></pre></div>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt;   Bounds  : set</span></span></code></pre></div>
 <p>In the vignette <a href="Processing.html">“Processing climate
 projection data”</a> is a fully worked out example of this.</p>
 </div>
@@ -845,22 +848,22 @@ years of time series data out of 30 years of the baseline factor.</p>
 <span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a><span class="co">#&gt;   Units   : days</span></span>
 <span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a><span class="co">#&gt;   Type    : 365_day</span></span>
 <span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co">#&gt; Time series:</span></span>
-<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt;   Elements: [2020-01-02 .. 2023-12-31] (average of 1.249357 days between 1168 elements)</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="co">#&gt;   Elements: [2020-01-01 .. 2023-12-31] (average of 1.250214 days between 1168 elements)</span></span>
 <span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a><span class="co">#&gt;   Bounds  : not set</span></span>
 <span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a><span class="co"># Note that there are about 1.25 days between observations</span></span>
 <span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a></span>
 <span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>mon <span class="ot">&lt;-</span> t<span class="sc">$</span><span class="fu">factor</span>(<span class="st">&quot;month&quot;</span>)</span>
 <span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a>t<span class="sc">$</span><span class="fu">factor_coverage</span>(mon, <span class="st">&quot;absolute&quot;</span>)</span>
-<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt;  [1] 20 20 26 23 24 25 22 25 29 24 22 22 25 24 22 24 23 24 21 24 25 26 27 27 25</span></span>
-<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; [26] 28 27 28 24 25 26 25 22 25 25 24 25 19 27 24 29 21 22 28 24 27 20 24</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a><span class="co">#&gt;  [1] 25 21 26 21 25 22 26 27 26 27 27 25 26 20 26 28 27 26 23 28 26 25 24 25 24</span></span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a><span class="co">#&gt; [26] 23 25 25 23 26 24 19 25 25 23 26 24 22 26 22 26 23 24 23 19 21 24 24</span></span>
 <span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a>t<span class="sc">$</span><span class="fu">factor_coverage</span>(mon, <span class="st">&quot;relative&quot;</span>)</span>
-<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt;  [1] 0.6451613 0.7142857 0.8387097 0.7666667 0.7741935 0.8333333 0.7096774</span></span>
-<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt;  [8] 0.8064516 0.9666667 0.7741935 0.7333333 0.7096774 0.8064516 0.8571429</span></span>
-<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="co">#&gt; [15] 0.7096774 0.8000000 0.7419355 0.8000000 0.6774194 0.7741935 0.8333333</span></span>
-<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a><span class="co">#&gt; [22] 0.8387097 0.9000000 0.8709677 0.8064516 1.0000000 0.8709677 0.9333333</span></span>
-<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="co">#&gt; [29] 0.7741935 0.8333333 0.8387097 0.8064516 0.7333333 0.8064516 0.8333333</span></span>
-<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a><span class="co">#&gt; [36] 0.7741935 0.8064516 0.6785714 0.8709677 0.8000000 0.9354839 0.7000000</span></span>
-<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a><span class="co">#&gt; [43] 0.7096774 0.9032258 0.8000000 0.8709677 0.6666667 0.7741935</span></span></code></pre></div>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a><span class="co">#&gt;  [1] 0.8064516 0.7500000 0.8387097 0.7000000 0.8064516 0.7333333 0.8387097</span></span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a><span class="co">#&gt;  [8] 0.8709677 0.8666667 0.8709677 0.9000000 0.8064516 0.8387097 0.7142857</span></span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a><span class="co">#&gt; [15] 0.8387097 0.9333333 0.8709677 0.8666667 0.7419355 0.9032258 0.8666667</span></span>
+<span id="cb10-25"><a href="#cb10-25" tabindex="-1"></a><span class="co">#&gt; [22] 0.8064516 0.8000000 0.8064516 0.7741935 0.8214286 0.8064516 0.8333333</span></span>
+<span id="cb10-26"><a href="#cb10-26" tabindex="-1"></a><span class="co">#&gt; [29] 0.7419355 0.8666667 0.7741935 0.6129032 0.8333333 0.8064516 0.7666667</span></span>
+<span id="cb10-27"><a href="#cb10-27" tabindex="-1"></a><span class="co">#&gt; [36] 0.8387097 0.7741935 0.7857143 0.8387097 0.7333333 0.8387097 0.7666667</span></span>
+<span id="cb10-28"><a href="#cb10-28" tabindex="-1"></a><span class="co">#&gt; [43] 0.7741935 0.7419355 0.6333333 0.6774194 0.8000000 0.7741935</span></span></code></pre></div>
 <p>Keep in mind, though, that there are data sets where the time unit is
 lower than the intended resolution of the data. Since the CF conventions
 recommend that the coarsest time unit is “day”, many files with monthly
