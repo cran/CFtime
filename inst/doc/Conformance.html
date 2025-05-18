@@ -260,7 +260,7 @@ of package <code>CFtime</code> with the CF Metadata Conventions, please
 <a href="https://github.com/pvanlaake/CFtime/issues">open an issue on
 GitHub</a>.</p>
 <p>Please note that there are many netCDF files out there that are not
-claiming adherence to the CF Metadata Conventions but whose time
+claimingadherence to the CF Metadata Conventions but whose time
 coordinate can still be successfully handled by <code>CFtime</code>: the
 <code>netCDF</code> library itself provides the basic plumbing.</p>
 <div id="time-coordinate" class="section level2">
@@ -284,11 +284,11 @@ both). Identification of a time coordinate is done by the
 <p>The <code>CFtime</code> package fully supports the units
 <code>&quot;second&quot;</code>, <code>&quot;minute&quot;</code>, <code>&quot;hour&quot;</code> and
 <code>&quot;day&quot;</code>, including abbreviated and/or plural forms. Unit
-<code>&quot;second&quot;</code> is the SI second, a <code>&quot;minute&quot;</code> equals
-60 seconds, an <code>&quot;hour&quot;</code> equals 3,600 seconds, and a
-<code>&quot;day&quot;</code> equals 86,400 seconds. This is exactly as expected,
-but refer to the <code>utc</code> calendar, below, for peculiarities of
-that calendar.</p>
+<code>&quot;second&quot;</code> is (nominally) the SI second, a
+<code>&quot;minute&quot;</code> equals 60 seconds, an <code>&quot;hour&quot;</code> equals
+3,600 seconds, and a <code>&quot;day&quot;</code> equals 86,400 seconds. This is
+exactly as expected, but refer to the <code>utc</code> calendar, below,
+for peculiarities of that calendar.</p>
 <p>The <code>units</code> <code>&quot;month&quot;</code> and <code>&quot;year&quot;</code>
 are accepted on input but not using their definition in UDUNITS.
 Instead, <code>&quot;year&quot;</code> is a calendar year, so either 360, 365 or
@@ -329,8 +329,10 @@ are never considered (see below).</li>
 <li><code>julian</code>: Fully conformant, but, despite the suggestion
 in the conventions, leap seconds do not exist in this calendar and are
 thus never considered.</li>
-<li><code>utc</code>: Fully conformant. Leap seconds are always
-accounted so when a leap second is included, UTC time progresses like
+<li><code>utc</code>: Fully conformant but with an origin of
+1972-01-01T00:00:00 (earlier datetimes not allowed). Leap seconds are
+always accounted so when a leap second is included, UTC time progresses
+like
 <code>23:59:58 ... 23:59:59 ... 23:59:60 ... 00:00:00 ... 00:00:01</code>.
 This also extends to minutes
 <code>23:59:00 ... 23:59:60 ... 00:00:59 ... 00:01:59</code>, always
@@ -377,7 +379,7 @@ attribute.</p>
 <p>The time coordinate with climatological bounds is fully supported,
 with the exception of using year 0 in the <code>standard</code> and
 <code>julian</code> calendars to flag climatological data (which is a
-deprecated practice as per the CF Metadata Conventions.</p>
+deprecated practice as per the CF Metadata Conventions).</p>
 <p>This package is agnostic to the underlying statistical operation that
 produced the <em>climatological time</em> so the
 <code>cell_methods</code> attribute is not inspected nor
