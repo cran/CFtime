@@ -5,25 +5,93 @@
 #' observations or climate projections. Specification of arguments can also be
 #' made manually in a variety of combinations.
 #'
+#' A time series can also be constructed like a sequence. In this case argument
+#' `offsets` should be `NULL` or missing and arguments `from` and `by` provided,
+#' with either of arguments `to` or `length.out` indicating the end of the time
+#' series. Arguments should be named to avoid ambiguity.
+#'
 #' @param definition A character string describing the time coordinate.
 #' @param calendar A character string describing the calendar to use with the
 #'   time dimension definition string. Default value is "standard".
 #' @param offsets Numeric or character vector, optional. When numeric, a vector
-#'   of offsets from the origin in the time series. When a character vector of
-#'   length 2 or more, timestamps in ISO8601 or UDUNITS format. When a character
-#'   string, a timestamp in ISO8601 or UDUNITS format and then a time series
-#'   will be generated with a separation between steps equal to the unit of
-#'   measure in the definition, inclusive of the definition timestamp. The unit
-#'   of measure of the offsets is defined by the time series definition.
+#'   of offsets from the origin in the time series. When a character vector,
+#'   timestamps in ISO8601 or UDUNITS format.
+#' @param from,to Optional. Character timestamps in ISO8601 or UDUNITS format.
+#'   When `from` is given, a sequence of timestamps is generated with `from` as
+#'   the starting timestamp. Either argument `to` or `length.out` must be
+#'   provided as well. Ignored when argument `offsets` is not `NULL`.
+#' @param by Optional. A single character string representing a time interval,
+#'   composed of a number and a time unit separated by a space, such as in "6
+#'   hours". When argument `from` is supplied, argument `by` will be the
+#'   separation between successive timestamps. Note that the time unit in the
+#'   string does not have to be the same as the unit in the `definition`
+#'   argument but it must be an allowable unit of time. Time interval units of
+#'   "months" and "years" are strongly discouraged unless the same time unit is
+#'   used in the `definition` argument - in all other cases there is a loss of
+#'   precision due to the ambiguity in the time units.
+#' @param length.out Optional. An numeric value that indicates the lengths of
+#'   the time series to generate, rounded up if fractional. Ignored when
+#'   argument `to` is provided.
 #' @returns An instance of the `CFTime` class.
 #' @export
 #' @name CFtime-function
 #' @examples
+#' # Using numeric offset values - this is how a netCDF file works
 #' CFtime("days since 1850-01-01", "julian", 0:364)
 #'
+#' # A time object with a single defined timestamp
 #' CFtime("hours since 2023-01-01", "360_day", "2023-01-30T23:00")
-CFtime <- function(definition, calendar = "standard", offsets = NULL) {
-  CFTime$new(definition, calendar, offsets)
+#'
+#' # A time series from a sequence with an end point
+#' CFtime("days since 2023-01-01", from = "2020-01-01", to = "2023-12-31", by = "12 days")
+#'
+#' # A time series from a sequence with a specified length
+#' CFtime("days since 2023-01-01", from = "2020-01-01T03:00:00", by = "6 hr", length.out = 31 * 4)
+CFtime <- function(definition, calendar = "standard", offsets, from, to, by, length.out) {
+  if (missing(offsets)) {
+    if (missing(from))
+      # Barebones CFTime without offsets
+      CFTime$new(definition, calendar)
+    else {
+      if (missing(by))
+        stop("When argument `from` is provided, argument `by` must be provided too.", call. = FALSE)
+      else if (!is.character(from) || length(from) > 1L)
+        stop("Argument `from` must be a single character timestamp value.", call. = FALSE)
+      else
+        t <- CFTime$new(definition, calendar, from)
+
+      # Process argument `by`
+      intv <- NA; intv_unit <- integer(0)
+      if (is.character(by) && length(by) == 1L) {
+        parts <- strsplit(by, " ", fixed = TRUE)[[1L]]
+        if (length(parts) == 2L) {
+          intv_unit <- CFt$CFunits[CFt$CFunits$unit == parts[2L], ]$id
+          suppressWarnings(intv <- as.numeric(parts[1L]))
+        }
+      }
+      if (is.na(intv) || !length(intv_unit))
+        stop("Argument `by` is an invalid time interval.", call. = FALSE)
+
+      doff <- intv * CFt$units$seconds[intv_unit] / CFt$units$seconds[t$cal$unit]
+
+      # End point of the time series
+      from_off <- t$offsets # There is only a single offset at this point
+      if (missing(to)) {
+        if (missing(length.out))
+          stop("One of arguments `to` or `length.out` must be supplied.", call. = FALSE)
+
+        # Time series with a given length
+        t + seq(from = from_off + doff, by = doff, length.out = length.out[1L] - 1L)
+      } else {
+        # Time series up to a finishing point
+        to_off <- t$cal$parse(to[1L])$offset
+        if (is.na(to_off))
+          stop("Argument `to` must be a single character timestamp value.")
+        t + seq(from = from_off + doff, to = to_off, by = doff)
+      }
+    }
+  } else
+    CFTime$new(definition, calendar, offsets)
 }
 
 # ==============================================================================

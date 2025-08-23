@@ -20,9 +20,9 @@ knitr::opts_chunk$set(
 
 This document sets out how the `CFtime` package conforms to the CF Metadata Conventions, by section of the conventions. This information is mostly useful for developers and expert users.
 
-If you have issues reading a netCDF file that is due to conformance of package `CFtime` with the CF Metadata Conventions, please [open an issue on GitHub](https://github.com/pvanlaake/CFtime/issues).
+If you have issues reading a netCDF file that is due to conformance of package `CFtime` with the CF Metadata Conventions, please [open an issue on GitHub](https://github.com/R-CF/CFtime/issues).
 
-Please note that there are many netCDF files out there that are not claimingadherence to the CF Metadata Conventions but whose time coordinate can still be successfully handled by `CFtime`: the `netCDF` library itself provides the basic plumbing.
+Please note that there are many netCDF files out there that are not claiming adherence to the CF Metadata Conventions but whose time coordinate can still be successfully handled by `CFtime`: the `netCDF` library itself provides the basic plumbing.
 
 ## 4.4. Time Coordinate
 
@@ -42,7 +42,7 @@ All variants of the glue word `"since"` are accepted, being `"after"`, `"from"`,
 
 The *"reference datetime string"* should be formatted using the UDUNITS broken timestamp format or following [ISO8601](https://en.wikipedia.org/wiki/ISO_8601) rules, but noting that datetimes valid in specific calendars other than Gregorian (such as `2023-02-30` in the `360_day` calendar) are acceptable as well. The UDUNITS "packed" format is not supported.
 
-Timezone information can only use `00`, `15`, `30` and `45` to indicate minutes; other minute offsets have never been used anywhere. A time zone value of `"UTC"` is accepted, as an extension to the conventions. Even though the conventions don't indicate it, the `tai` and `utc` calendars can carry no time zone indication as that does not exist for either of these calendars.
+Timezone information can only use `00`, `15`, `30` and `45` to indicate minutes; other minute offsets have never been used anywhere. A time zone value of `"UTC"` or `"GMT"` is accepted, as an extension to the conventions. Even though the conventions don't indicate it, the `tai` and `utc` calendars can carry no time zone indication as that does not exist for either of these calendars.
 
 ## 4.4.2. Calendar
 

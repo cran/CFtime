@@ -26,6 +26,12 @@ test_that("bounds works", {
   expect_match(capture_output(t$print()), "Bounds  : set$")
   expect_equal(bounds(t), hr6)
   expect_equal(bounds(t, "%H")[,1], c("06", "18"))
+
+  # Copying / subsetting with bounds
+  expect_identical(t, t$copy())
+  tsub <- t$subset(3:5)
+  subbnds <- tsub$bounds
+  expect_equal(subbnds, matrix(c(2.25, 2.75, 3.25, 3.75, 4.25, 4.75), nrow = 2))
 })
 
 test_that("indexOf() works", {

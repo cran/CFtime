@@ -41,6 +41,8 @@ are \href{https://cran.r-project.org/package=RNetCDF}{RNetCDF} and
 \item \code{\link[=CFtime-merge]{Merge}} two \code{CFTime} instances or append additional time steps to a \code{CFTime} instance
 \item \code{\link[=as_timestamp]{as_timestamp()}} and \code{\link[=format]{format()}}: Generate a vector of character or \code{POSIXct} timestamps from a \code{CFTime} instance
 \item \code{\link[=range]{range()}}: Timestamps of the two endpoints in the time series
+\item \code{copy()}: Create a copy of a CFTime instance
+\item \code{subset()}: Create a new CFTime instance which is a subset by index positions of another CFTime instance
 \item \code{\link[=is_complete]{is_complete()}}: Does the \code{CFTime} instance have a complete time series between endpoints?
 \item \code{\link[=month_days]{month_days()}}: How many days are there in a month using the calendar of the \code{CFTime} instance?
 }
@@ -62,8 +64,8 @@ fractional part for interpolation.
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/pvanlaake/CFtime}
-  \item Report bugs at \url{https://github.com/pvanlaake/CFtime/issues}
+  \item \url{https://github.com/R-CF/CFtime}
+  \item Report bugs at \url{https://github.com/R-CF/CFtime/issues}
 }
 
 }

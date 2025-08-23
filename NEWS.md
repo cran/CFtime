@@ -1,3 +1,10 @@
+# CFtime 1.7.0
+
+* CFtime is now hosted on Github through the R-CF organization: all things related to the CF Metadata Conventions in R.
+* New sequence-like method to create `CFTime` instances.
+* New methods `CFTime$copy()` and `CFTime$subset()` to create copies of the entire `CFTime` instance or a subset thereof, including boundary values if they are set.
+* Fixed error on year 0 timestamps.
+
 # CFtime 1.6.2
 
 * `CFTime$indexOf()` method has new `rightmost.closed` argument with default value `FALSE`. Invalid return values are always `NA`, also for values outside of range. Boundary values are fully considered so when boundary values are not contiguous, results may be `NA` when values of `x` do not fall within the bounds of a coordinate.

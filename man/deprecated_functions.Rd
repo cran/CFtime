@@ -2,28 +2,13 @@
 % Please edit documentation in R/deprecated.R
 \name{deprecated_functions}
 \alias{deprecated_functions}
-\alias{CFtimestamp}
-\alias{CFmonth_days}
-\alias{CFcomplete}
-\alias{CFsubset}
 \alias{slab}
-\alias{CFparse}
 \title{Deprecated functions}
 \usage{
-CFtimestamp(t, format = NULL, asPOSIX = FALSE)
-
-CFmonth_days(t, x = NULL)
-
-CFcomplete(x)
-
-CFsubset(x, extremes)
-
 slab(x, extremes, rightmost.closed = FALSE)
-
-CFparse(t, x)
 }
 \arguments{
-\item{t, x, format, asPOSIX, extremes, rightmost.closed}{See replacement functions.}
+\item{x, extremes, rightmost.closed}{See replacement functions.}
 }
 \value{
 See replacement functions.
@@ -32,7 +17,14 @@ See replacement functions.
 These functions are deprecated and should no longer be used in new code. The
 below table gives the replacement function to use instead. The function
 arguments of the replacement function are the same as those of the deprecated
-function if no arguments are given in the table.\tabular{ll}{
+function if no arguments are given in the table.\tabular{lll}{
+   \strong{Deprecated function} \tab \strong{Replacement function} \tab \strong{Secheduled deletion} \cr
+   slab() \tab \code{\link[=slice]{slice()}} \tab October 2025 \cr
+}
+
+
+The below functions have been permanently deleted and can no longer be
+called:\tabular{ll}{
    \strong{Deprecated function} \tab \strong{Replacement function} \cr
    CFcomplete() \tab \code{\link[=is_complete]{is_complete()}} \cr
    CFmonth_days() \tab \code{\link[=month_days]{month_days()}} \cr

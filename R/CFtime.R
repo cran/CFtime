@@ -21,7 +21,7 @@
 CFTime <- R6::R6Class("CFTime",
   private = list(
     # The boundary values of the time instance.
-    bnds = NULL
+    .bounds = NULL
   ),
   public = list(
     #' @field cal The calendar of this `CFTime` instance, a descendant of the
@@ -114,7 +114,7 @@ CFTime <- R6::R6Class("CFTime",
             paste("  Element :", d[1L], "\n")
         }
 
-        b <- if (is.null(private$bnds)) "  Bounds  : not set\n"
+        b <- if (is.null(private$.bounds)) "  Bounds  : not set\n"
              else "  Bounds  : set\n"
       }
       cal <- capture.output(self$cal$print())
@@ -144,7 +144,7 @@ CFTime <- R6::R6Class("CFTime",
         stop("`bounds` argument, when present, must be a single logical value", call. = FALSE) # nocov
 
       if (bounds) {
-        bnds <- private$bnds
+        bnds <- private$.bounds
         if (is.null(bnds)) time <- self$cal$offsets2time(base::range(self$offsets))
         else time <- self$cal$offsets2time(c(bnds[1L, 1L], bnds[2L, length(self$offsets)]))
       } else time <- self$cal$offsets2time(base::range(self$offsets))
@@ -228,10 +228,6 @@ CFTime <- R6::R6Class("CFTime",
     #'   returned verbatim.
     format = function(format) {
       if (length(self$offsets) == 0L) return(character(0L))
-
-      if (!requireNamespace("stringr", quietly = TRUE))
-        stop("package `stringr` is required - please install it first", call. = FALSE) # nocov
-
       if (missing(format)) format <- ""
       else if (!is.character(format) || length(format) != 1L)
         stop("`format` argument must be a character string with formatting specifiers", call. = FALSE)
@@ -320,7 +316,7 @@ CFTime <- R6::R6Class("CFTime",
       valid <- which(!is.na(intv))
       if (any(valid)) {
         t <- CFTime$new(self$cal$definition, self$cal$name, xoff[valid])
-        bnds <- private$bnds
+        bnds <- private$.bounds
         if (!is.null(bnds))
           t$set_bounds(bnds[, intv[valid], drop = FALSE])
         attr(intv, "CFTime") <- t
@@ -334,7 +330,7 @@ CFTime <- R6::R6Class("CFTime",
     #' @return An array with dims(2, length(offsets)) with values for the
     #'   bounds. `NULL` if the bounds have not been set.
     get_bounds = function(format) {
-      bnds <- private$bnds
+      bnds <- private$.bounds
       if (is.null(bnds) || missing(format)) return(bnds)
 
       ts <- self$cal$offsets2time(as.vector(bnds))
@@ -350,13 +346,13 @@ CFTime <- R6::R6Class("CFTime",
     #'   make regular, consecutive bounds.
     #' @return `self` invisibly.
     set_bounds = function(value) {
-      if (is.null(value) || isFALSE(value)) private$bnds <- NULL
+      if (is.null(value) || isFALSE(value)) private$.bounds <- NULL
       else if (isTRUE(value)) {
         len <- length(self$offsets)
         b <- seq(from       = self$offsets[1L] - self$resolution * 0.5,
                  by         = self$resolution,
                  length.out = len + 1L)
-        private$bnds <- rbind(b[1L:len], b[2L:(len+1L)])
+        private$.bounds <- rbind(b[1L:len], b[2L:(len+1L)])
       } else {
         off <- self$offsets
         len <- length(off)
@@ -372,7 +368,7 @@ CFTime <- R6::R6Class("CFTime",
         if (!(all(value[2L,] >= off) && all(off >= value[1L,])))
           stop("Values of the replacement value must surround the offset values", call. = FALSE)
 
-        private$bnds <- value
+        private$.bounds <- value
       }
       invisible(self)
     },
@@ -405,7 +401,7 @@ CFTime <- R6::R6Class("CFTime",
           # This is all rather approximate but should be fine in most cases
           # This accommodates middle-of-the-time-period offsets as per the
           # CF Metadata Conventions
-          # Please report problems at https://github.com/pvanlaake/CFtime/issues
+          # Please report problems at https://github.com/R-CF/CFtime/issues
           ddays <- range(doff) * CFt$units$per_day[self$cal$unit]
           return((ddays[1] >= 28 && ddays[2] <= 31) ||      # months
                    (ddays[1] >= 8 && ddays[2] <= 11) ||     # dekads
@@ -452,7 +448,7 @@ CFTime <- R6::R6Class("CFTime",
                else off >= ext[1L] & off < ext[2L]
         if (any(out)) {
           t <- CFTime$new(self$cal$definition, self$cal$name, off[out])
-          bnds <- private$bnds
+          bnds <- private$.bounds
           if (!is.null(bnds))
             t$set_bounds(bnds[, out, drop = FALSE])
           attr(out, "CFTime") <- t
@@ -903,6 +899,33 @@ CFTime <- R6::R6Class("CFTime",
 
       if (is.factor(f)) out <- out[[1L]]
       out
+    },
+
+    #' @description Create a copy of the current instance. The copy is
+    #'   completely separate from the current instance.
+    #' @return A new `CFTime` instance with identical definition and set of
+    #'   timestamps.
+    copy = function() {
+      new_time <- CFTime$new(self$cal$definition, self$cal$name, self$offsets)
+      if (!is.null(private$.bounds))
+        new_time$set_bounds(private$.bounds)
+      new_time
+    },
+
+    #' @description Get a new `CFTime` instance that is a subset of the current
+    #' instance, including any boundary values.
+    #' @param rng The numeric range of indices to subset this instance to.
+    #' @return A new `CFTime` instance with identical definition and set of
+    #'   timestamps according to the `rng` argument.
+    subset = function(rng) {
+      rng <- range(rng)
+      if (!is.numeric(rng) || rng[1L] < 1L || rng[2L] > length(self$offsets))
+        stop("Range to subset is invalid.", call. = FALSE) # nocov
+
+      new_time <- CFTime$new(self$cal$definition, self$cal$name, self$offsets[rng[1L]:rng[2L]])
+      if (!is.null(private$.bounds))
+        new_time$set_bounds(private$.bounds[ , rng[1L]:rng[2L]])
+      new_time
     }
   ),
   active = list(
@@ -925,7 +948,7 @@ CFTime <- R6::R6Class("CFTime",
     #'   and consecutive bounds.
     bounds = function(value) {
       if (missing(value))
-        private$bnds
+        private$.bounds
       else
         self$set_bounds(value)
     },

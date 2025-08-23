@@ -5,7 +5,7 @@
 \alias{CFtime}
 \title{Create a CFTime object}
 \usage{
-CFtime(definition, calendar = "standard", offsets = NULL)
+CFtime(definition, calendar = "standard", offsets, from, to, by, length.out)
 }
 \arguments{
 \item{definition}{A character string describing the time coordinate.}
@@ -14,12 +14,27 @@ CFtime(definition, calendar = "standard", offsets = NULL)
 time dimension definition string. Default value is "standard".}
 
 \item{offsets}{Numeric or character vector, optional. When numeric, a vector
-of offsets from the origin in the time series. When a character vector of
-length 2 or more, timestamps in ISO8601 or UDUNITS format. When a character
-string, a timestamp in ISO8601 or UDUNITS format and then a time series
-will be generated with a separation between steps equal to the unit of
-measure in the definition, inclusive of the definition timestamp. The unit
-of measure of the offsets is defined by the time series definition.}
+of offsets from the origin in the time series. When a character vector,
+timestamps in ISO8601 or UDUNITS format.}
+
+\item{from, to}{Optional. Character timestamps in ISO8601 or UDUNITS format.
+When \code{from} is given, a sequence of timestamps is generated with \code{from} as
+the starting timestamp. Either argument \code{to} or \code{length.out} must be
+provided as well. Ignored when argument \code{offsets} is not \code{NULL}.}
+
+\item{by}{Optional. A single character string representing a time interval,
+composed of a number and a time unit separated by a space, such as in "6
+hours". When argument \code{from} is supplied, argument \code{by} will be the
+separation between successive timestamps. Note that the time unit in the
+string does not have to be the same as the unit in the \code{definition}
+argument but it must be an allowable unit of time. Time interval units of
+"months" and "years" are strongly discouraged unless the same time unit is
+used in the \code{definition} argument - in all other cases there is a loss of
+precision due to the ambiguity in the time units.}
+
+\item{length.out}{Optional. An numeric value that indicates the lengths of
+the time series to generate, rounded up if fractional. Ignored when
+argument \code{to} is provided.}
 }
 \value{
 An instance of the \code{CFTime} class.
@@ -30,8 +45,22 @@ call are typically read from a CF-compliant data file with climatological
 observations or climate projections. Specification of arguments can also be
 made manually in a variety of combinations.
 }
+\details{
+A time series can also be constructed like a sequence. In this case argument
+\code{offsets} should be \code{NULL} or missing and arguments \code{from} and \code{by} provided,
+with either of arguments \code{to} or \code{length.out} indicating the end of the time
+series. Arguments should be named to avoid ambiguity.
+}
 \examples{
+# Using numeric offset values - this is how a netCDF file works
 CFtime("days since 1850-01-01", "julian", 0:364)
 
+# A time object with a single defined timestamp
 CFtime("hours since 2023-01-01", "360_day", "2023-01-30T23:00")
+
+# A time series from a sequence with an end point
+CFtime("days since 2023-01-01", from = "2020-01-01", to = "2023-12-31", by = "12 days")
+
+# A time series from a sequence with a specified length
+CFtime("days since 2023-01-01", from = "2020-01-01T03:00:00", by = "6 hr", length.out = 31 * 4)
 }

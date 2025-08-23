@@ -257,10 +257,10 @@ to the CF Metadata Conventions, by section of the conventions. This
 information is mostly useful for developers and expert users.</p>
 <p>If you have issues reading a netCDF file that is due to conformance
 of package <code>CFtime</code> with the CF Metadata Conventions, please
-<a href="https://github.com/pvanlaake/CFtime/issues">open an issue on
+<a href="https://github.com/R-CF/CFtime/issues">open an issue on
 GitHub</a>.</p>
 <p>Please note that there are many netCDF files out there that are not
-claimingadherence to the CF Metadata Conventions but whose time
+claiming adherence to the CF Metadata Conventions but whose time
 coordinate can still be successfully handled by <code>CFtime</code>: the
 <code>netCDF</code> library itself provides the basic plumbing.</p>
 <div id="time-coordinate" class="section level2">
@@ -308,10 +308,10 @@ supported.</p>
 <p>Timezone information can only use <code>00</code>, <code>15</code>,
 <code>30</code> and <code>45</code> to indicate minutes; other minute
 offsets have never been used anywhere. A time zone value of
-<code>&quot;UTC&quot;</code> is accepted, as an extension to the conventions. Even
-though the conventions don’t indicate it, the <code>tai</code> and
-<code>utc</code> calendars can carry no time zone indication as that
-does not exist for either of these calendars.</p>
+<code>&quot;UTC&quot;</code> or <code>&quot;GMT&quot;</code> is accepted, as an extension to
+the conventions. Even though the conventions don’t indicate it, the
+<code>tai</code> and <code>utc</code> calendars can carry no time zone
+indication as that does not exist for either of these calendars.</p>
 </div>
 <div id="calendar" class="section level2">
 <h2>4.4.2. Calendar</h2>

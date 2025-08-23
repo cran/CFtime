@@ -7,6 +7,13 @@
 #' arguments of the replacement function are the same as those of the deprecated
 #' function if no arguments are given in the table.
 #'
+#' | **Deprecated function** | **Replacement function** | **Secheduled deletion** |
+#' | ------------------- | -------------------- | -------------------- |
+#' | slab()              | [slice()]            | October 2025         |
+#'
+#' The below functions have been permanently deleted and can no longer be
+#' called:
+#'
 #' | **Deprecated function** | **Replacement function** |
 #' | ------------------- | -------------------- |
 #' | CFcomplete()        | [is_complete()]      |
@@ -17,7 +24,7 @@
 #' | slab()              | [slice()]            |
 #' | CFtimestamp()       | [as_timestamp()]     |
 #'
-#' @param t,x,format,asPOSIX,extremes,rightmost.closed See replacement functions.
+#' @param x,extremes,rightmost.closed See replacement functions.
 #'
 #' @returns See replacement functions.
 
@@ -25,44 +32,9 @@
 
 #' @rdname deprecated_functions
 #' @export
-CFtimestamp <- function(t, format = NULL, asPOSIX = FALSE) {
-  warning("Function `CFtimestamp()` is deprecated. Use `as_timestamp()` instead.")
-  as_timestamp(t, format, asPOSIX)
-}
-
-#' @rdname deprecated_functions
-#' @export
-CFmonth_days <- function(t, x = NULL) {
-  warning("Function `CFmonth_days()` is deprecated. Use `month_days()` instead.")
-  month_days(t, x)
-}
-
-#' @rdname deprecated_functions
-#' @export
-CFcomplete <- function(x) {
-  warning("Function `CFcomplete()` is deprecated. Use `is_complete()` instead.")
-  is_complete(x)
-}
-
-#' @rdname deprecated_functions
-#' @export
-CFsubset <- function(x, extremes) {
-  warning("Function `CFsubset()` is deprecated. Use `slice()` instead.")
-  slice(x, extremes)
-}
-
-#' @rdname deprecated_functions
-#' @export
 slab <- function(x, extremes, rightmost.closed = FALSE) {
   warning("Function `slab()` is deprecated. Use function `slice()` instead", call. = FALSE)
   x$slice(extremes, rightmost.closed)
-}
-
-#' @rdname deprecated_functions
-#' @export
-CFparse <- function(t, x) {
-  warning("Function `CFparse()` is deprecated. Use `parse_timestamps()` instead.")
-  parse_timestamps(t, x)
 }
 
 # nocov end

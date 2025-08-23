@@ -1,19 +1,19 @@
 test_that("Creating timestamps", {
   expect_error(as_timestamp("1-2-3"))          # No CFtime as first argument
 
-  cf <- CFtime("hours since 2001-01-01", "365_day")
-  expect_null(as_timestamp(cf)) # No offsets
+  cf <- CFTime$new("hours since 2001-01-01", "365_day")
+  expect_null(cf$as_timestamp()) # No offsets
   cf <- cf + 0L:2399L
-  expect_error(as_timestamp(cf, "d"))          # Wrong format specifier
-  expect_error(as_timestamp(cf, asPOSIX = T))  # No POSIXt on a non-standard calendar
-  expect_equal(length(as_timestamp(cf)), 2400L)
+  expect_error(cf$as_timestamp("d"))          # Wrong format specifier
+  expect_error(cf$as_timestamp(asPOSIX = T))  # No POSIXt on a non-standard calendar
+  expect_equal(length(cf$as_timestamp()), 2400L)
 
-  cf <- CFtime("days since 2001-01-01", "standard", 0L:364L)
-  expect_equal(length(as_timestamp(cf)), 365L)
-  expect_equal(nchar(as_timestamp(cf)[1]), 10L) # date string
-  expect_equal(length(as_timestamp(cf, "date", TRUE)), 365L)
-  expect_equal(length(as_timestamp(cf, "timestamp", TRUE)), 365L)
-  expect_equal(as_timestamp(cf), as.character(cf))
+  cf <- CFTime$new("days since 2001-01-01", "standard", 0L:364L)
+  expect_equal(length(cf$as_timestamp()), 365L)
+  expect_equal(nchar(cf$as_timestamp()[1]), 10L) # date string
+  expect_equal(length(cf$as_timestamp("date", TRUE)), 365L)
+  expect_equal(length(cf$as_timestamp("timestamp", TRUE)), 365L)
+  expect_equal(cf$as_timestamp(), as.character(cf))
 
   cf <- cf + 364.56764
   expect_equal(cf$range()[2], "2001-12-31T13:37:24.096")
@@ -25,21 +25,21 @@ test_that("Using format()", {
 
   cf <- cf + 0:364
 
-  expect_equal(format(cf)[1], "2001-01-01T18:10:30")      # format parameter missing
-  expect_error(format(cf, 123)) # format parameter must be character
-  expect_error(format(cf, c("doesn't", "work", "either")))
+  expect_equal(cf$format()[1], "2001-01-01T18:10:30")      # format parameter missing
+  expect_error(cf$format(123)) # format parameter must be character
+  expect_error(cf$format(c("doesn't", "work", "either")))
 
-  expect_equal(format(cf, "Timestamp is: %%%F%%")[1], "Timestamp is: %2001-01-01%")
-  expect_equal(format(cf, "Timestamp is: %R")[1], "Timestamp is: 18:10")
-  expect_equal(format(cf, "%T%z")[1], "18:10:30-0400")
-  #expect_equal(format(cf, "%b")[c(1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335)], month.abb)  # en_EN only
-  #expect_equal(format(cf, "%B")[c(1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335)], month.name) #
-  expect_equal(format(cf, "%Od-%e-%I%p")[5], "05- 5-06PM")
+  expect_equal(cf$format("Timestamp is: %%%F%%")[1], "Timestamp is: %2001-01-01%")
+  expect_equal(cf$format("Timestamp is: %R")[1], "Timestamp is: 18:10")
+  expect_equal(cf$format("%T%z")[1], "18:10:30-0400")
+  #expect_equal(cf$format("%b")[c(1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335)], month.abb)  # en_EN only
+  #expect_equal(cf$format("%B")[c(1, 32, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335)], month.name) #
+  expect_equal(cf$format("%Od-%e-%I%p")[5], "05- 5-06PM")
 })
 
 test_that("Factor testing", {
   # No offsets
-  cf <- CFtime("days since 2000-01-01", "365_day")
+  cf <- CFTime$new("days since 2000-01-01", "365_day")
   expect_error(CFfactor())
   expect_error(CFfactor(cf))
   expect_error(CFfactor(cf, "zxcv"))

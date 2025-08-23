@@ -71,6 +71,8 @@ purposes.}
 \item \href{#method-CFTime-factor}{\code{CFTime$factor()}}
 \item \href{#method-CFTime-factor_units}{\code{CFTime$factor_units()}}
 \item \href{#method-CFTime-factor_coverage}{\code{CFTime$factor_coverage()}}
+\item \href{#method-CFTime-copy}{\code{CFTime$copy()}}
+\item \href{#method-CFTime-subset}{\code{CFTime$subset()}}
 \item \href{#method-CFTime-clone}{\code{CFTime$clone()}}
 }
 }
@@ -637,6 +639,43 @@ time series contained in each level of the factor when
 \code{coverage = "absolute"} or the proportion of units present relative to the
 maximum number when \code{coverage = "relative"}. If \code{f} is a list of factors, a
 list with each element a numeric vector as above.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-CFTime-copy"></a>}}
+\if{latex}{\out{\hypertarget{method-CFTime-copy}{}}}
+\subsection{Method \code{copy()}}{
+Create a copy of the current instance. The copy is
+completely separate from the current instance.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CFTime$copy()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A new \code{CFTime} instance with identical definition and set of
+timestamps.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-CFTime-subset"></a>}}
+\if{latex}{\out{\hypertarget{method-CFTime-subset}{}}}
+\subsection{Method \code{subset()}}{
+Get a new \code{CFTime} instance that is a subset of the current
+instance, including any boundary values.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{CFTime$subset(rng)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{rng}}{The numeric range of indices to subset this instance to.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A new \code{CFTime} instance with identical definition and set of
+timestamps according to the \code{rng} argument.
 }
 }
 \if{html}{\out{<hr>}}

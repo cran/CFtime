@@ -34,7 +34,7 @@ CFCalendar365 <- R6::R6Class("CFCalendar365",
     #'   with `TRUE` for valid days and `FALSE` for invalid days, or `NA` where
     #'   the row in argument `ymd` has `NA` values.
     valid_days = function(ymd) {
-      ymd$year & ymd$month >= 1L & ymd$month <= 12L & ymd$day >= 1L &
+      !is.na(ymd$year) & ymd$month >= 1L & ymd$month <= 12L & ymd$day >= 1L &
       ymd$day <= c(31L, 28L, 31L, 30L, 31L, 30L, 31L, 31L, 30L, 31L, 30L, 31L)[ymd$month]
     },
 

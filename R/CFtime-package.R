@@ -34,6 +34,8 @@
 #' * [`Merge`][CFtime-merge] two `CFTime` instances or append additional time steps to a `CFTime` instance
 #' * [as_timestamp()] and [format()]: Generate a vector of character or `POSIXct` timestamps from a `CFTime` instance
 #' * [range()]: Timestamps of the two endpoints in the time series
+#' * `copy()`: Create a copy of a CFTime instance
+#' * `subset()`: Create a new CFTime instance which is a subset by index positions of another CFTime instance
 #' * [is_complete()]: Does the `CFTime` instance have a complete time series between endpoints?
 #' * [month_days()]: How many days are there in a month using the calendar of the `CFTime` instance?
 #'

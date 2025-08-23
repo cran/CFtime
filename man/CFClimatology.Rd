@@ -46,6 +46,7 @@ purposes.}
 <ul>
 <li><span class="pkg-link" data-pkg="CFtime" data-topic="CFTime" data-id="POSIX_compatible"><a href='../../CFtime/html/CFTime.html#method-CFTime-POSIX_compatible'><code>CFtime::CFTime$POSIX_compatible()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="CFtime" data-topic="CFTime" data-id="as_timestamp"><a href='../../CFtime/html/CFTime.html#method-CFTime-as_timestamp'><code>CFtime::CFTime$as_timestamp()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="CFtime" data-topic="CFTime" data-id="copy"><a href='../../CFtime/html/CFTime.html#method-CFTime-copy'><code>CFtime::CFTime$copy()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="CFtime" data-topic="CFTime" data-id="cut"><a href='../../CFtime/html/CFTime.html#method-CFTime-cut'><code>CFtime::CFTime$cut()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="CFtime" data-topic="CFTime" data-id="equidistant"><a href='../../CFtime/html/CFTime.html#method-CFTime-equidistant'><code>CFtime::CFTime$equidistant()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="CFtime" data-topic="CFTime" data-id="factor"><a href='../../CFtime/html/CFTime.html#method-CFTime-factor'><code>CFtime::CFTime$factor()</code></a></span></li>
@@ -57,6 +58,7 @@ purposes.}
 <li><span class="pkg-link" data-pkg="CFtime" data-topic="CFTime" data-id="range"><a href='../../CFtime/html/CFTime.html#method-CFTime-range'><code>CFtime::CFTime$range()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="CFtime" data-topic="CFTime" data-id="set_bounds"><a href='../../CFtime/html/CFTime.html#method-CFTime-set_bounds'><code>CFtime::CFTime$set_bounds()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="CFtime" data-topic="CFTime" data-id="slice"><a href='../../CFtime/html/CFTime.html#method-CFTime-slice'><code>CFtime::CFTime$slice()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="CFtime" data-topic="CFTime" data-id="subset"><a href='../../CFtime/html/CFTime.html#method-CFTime-subset'><code>CFtime::CFTime$subset()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -79,9 +81,9 @@ calendar.}
 the values permitted by the CF Metadata Conventions. If \code{NULL}, the
 "standard" calendar will be used.}
 
-\item{\code{offsets}}{Numeric or character vector. When numeric, a
-vector of offsets from the origin in the time series. When a character
-vector of length 2 or more, timestamps in ISO8601 or UDUNITS format.}
+\item{\code{offsets}}{Numeric or character vector. When numeric, a vector of
+offsets from the origin in the time series. When a character vector of
+length 2 or more, timestamps in ISO8601 or UDUNITS format.}
 
 \item{\code{bounds}}{The climatological bounds for the offsets. A \code{matrix} with
 columns for \code{offsets} and low values in the first row, high values in

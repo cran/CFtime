@@ -30,9 +30,9 @@ CFClimatology <- R6::R6Class("CFClimatology",
     #' @param calendar Character string of the calendar to use. Must be one of
     #'   the values permitted by the CF Metadata Conventions. If `NULL`, the
     #'   "standard" calendar will be used.
-    #' @param offsets Numeric or character vector. When numeric, a
-    #'   vector of offsets from the origin in the time series. When a character
-    #'   vector of length 2 or more, timestamps in ISO8601 or UDUNITS format.
+    #' @param offsets Numeric or character vector. When numeric, a vector of
+    #'   offsets from the origin in the time series. When a character vector of
+    #'   length 2 or more, timestamps in ISO8601 or UDUNITS format.
     #' @param bounds The climatological bounds for the offsets. A `matrix` with
     #'   columns for `offsets` and low values in the first row, high values in
     #'   the second row. The bounds will oftentimes overlap or be discontinuous.

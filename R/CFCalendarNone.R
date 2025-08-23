@@ -30,7 +30,6 @@ CFCalendarNone <- R6::R6Class("CFCalendarNone",
     valid_days = function(ymd) {
       if (!nrow(self$origin)) TRUE
       else
-        ymd$year &
         ymd$year == self$origin$year &
         ymd$month == self$origin$month &
         ymd$day == self$origin$day
