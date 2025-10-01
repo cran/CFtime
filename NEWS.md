@@ -1,3 +1,11 @@
+# CFtime 1.7.1
+
+Maintenance release
+
+* Added `length` field to class `CFTime`.
+* Added `format.CFTime()` S3 method.
+* Documentation has been moved from vignettes to a website on github.io.
+
 # CFtime 1.7.0
 
 * CFtime is now hosted on Github through the R-CF organization: all things related to the CF Metadata Conventions in R.

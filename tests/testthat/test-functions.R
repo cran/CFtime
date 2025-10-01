@@ -24,4 +24,6 @@ test_that("Various minor functions", {
   expect_equal(month_days(cf4, x), c(30, 31, 28, 28, 28, 28))
   expect_equal(month_days(cf5, x), c(30, 31, 29, 29, 29, 29))
   expect_equal(month_days(cf6, x), c(30, 31, 28, 28, 29, 28))
+
+
 })

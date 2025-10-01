@@ -43,6 +43,9 @@ descendant of the \link{CFCalendar} class.}
 
 \item{\code{unit}}{(read-only) The unit string of the calendar and time series.}
 
+\item{\code{length}}{(read-only) Retrieve the number of offsets in the time
+series.}
+
 \item{\code{bounds}}{Retrieve or set the bounds for the offsets. On setting, a
 \code{matrix} with columns for \code{offsets} and low values in the first row,
 high values in the second row. This may be simply \code{TRUE} to set regular
@@ -119,7 +122,7 @@ Print a summary of the \code{CFTime} object to the console.
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-\code{self} invisibly.
+Self, invisibly.
 }
 }
 \if{html}{\out{<hr>}}
@@ -221,7 +224,7 @@ method to generate \code{POSIXct} timestamps (observed data generally uses a
 "standard" calendar) and then use the \code{\link[base:format]{base::format()}} function which
 supports the full set of specifiers.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{CFTime$format(format)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{CFTime$format(format, usetz = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -230,6 +233,10 @@ supports the full set of specifiers.
 \item{\code{format}}{A character string with \code{strptime} format specifiers. If
 omitted, the most economical format will be used: a full timestamp when
 time information is available, a date otherwise.}
+
+\item{\code{usetz}}{Logical. Should the time zone offset be appended to the
+output? This is always in numerical form, i.e. "-0800", from UTC.
+Default is \code{FALSE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -244,17 +251,16 @@ returned verbatim.
 \if{latex}{\out{\hypertarget{method-CFTime-indexOf}{}}}
 \subsection{Method \code{indexOf()}}{
 Find the index in the time series for each timestamp given
-in argument \code{x}. Alternatively, when \code{x} is a numeric vector of
-index values, return the valid indices of the same vector, with the
-side effect being the attribute "CFTime" associated with the result.
+in argument \code{x}. Alternatively, when \code{x} is a numeric vector of index
+values, return the valid indices of the same vector, with the side
+effect being the attribute "CFTime" associated with the result.
 
 Matching also returns index values for timestamps that fall between two
 elements of the time series - this can lead to surprising results when
 time series elements are positioned in the middle of an interval (as
 the CF Metadata Conventions instruct us to "reasonably assume"): a time
 series of days in January would be encoded in a netCDF file as
-\code{c("2024-01-01 12:00:00", "2024-01-02 12:00:00", "2024-01-03 12:00:00", ...)}
-so \code{x <- c("2024-01-01", "2024-01-02", "2024-01-03")} would
+\code{c("2024-01-01 12:00:00", "2024-01-02 12:00:00", "2024-01-03 12:00:00", ...)} so \code{x <- c("2024-01-01", "2024-01-02", "2024-01-03")} would
 result in \verb{(NA, 1, 2)} (or \verb{(NA, 1.5, 2.5)} with \code{method = "linear"})
 because the date values in \code{x} are at midnight. This situation is
 easily avoided by ensuring that this \code{CFTime} instance has bounds set
@@ -268,13 +274,14 @@ value of \code{x} falls between two valid timestamps.
 Values of \code{x} that are not valid timestamps according to the calendar
 of this \code{CFTime} instance will be returned as \code{NA}.
 
-Argument \code{x} can also be a numeric vector of index values, in which case the
-valid values in \code{x} are returned. If negative values are passed, the
-positive counterparts will be excluded and then the remainder returned.
-Positive and negative values may not be mixed. Using a numeric vector
-has the side effect that the result has the attribute "CFTime"
-describing the temporal dimension of the slice. If index values outside
-of the range of \code{self} are provided, an error will be thrown.
+Argument \code{x} can also be a numeric vector of index values, in which
+case the valid values in \code{x} are returned. If negative values are
+passed, the positive counterparts will be excluded and then the
+remainder returned. Positive and negative values may not be mixed.
+Using a numeric vector has the side effect that the result has the
+attribute "CFTime" describing the temporal dimension of the slice. If
+index values outside of the range of \code{self} are provided, an error will
+be thrown.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CFTime$indexOf(x, method = "constant", rightmost.closed = FALSE)}\if{html}{\out{</div>}}
 }
@@ -282,8 +289,8 @@ of the range of \code{self} are provided, an error will be thrown.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{Vector of character, POSIXt or Date values to find indices for,
-or a numeric vector.}
+\item{\code{x}}{Vector of \code{character}, \code{POSIXt} or \code{Date} values to find indices
+for, or a \code{numeric} vector.}
 
 \item{\code{method}}{Single value of "constant" or "linear". If \code{"constant"},
 return the index value for each match. If \code{"linear"}, return the index
@@ -307,7 +314,7 @@ method, excluding any \code{NA} values.
 \if{html}{\out{<a id="method-CFTime-get_bounds"></a>}}
 \if{latex}{\out{\hypertarget{method-CFTime-get_bounds}{}}}
 \subsection{Method \code{get_bounds()}}{
-Return bounds.
+Return boundary values.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CFTime$get_bounds(format)}\if{html}{\out{</div>}}
 }
@@ -320,15 +327,15 @@ Return bounds.
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-An array with dims(2, length(offsets)) with values for the
-bounds. \code{NULL} if the bounds have not been set.
+An array with \code{dims(2, length(offsets))} with values for the
+boundaries. \code{NULL} if the boundaries have not been set.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CFTime-set_bounds"></a>}}
 \if{latex}{\out{\hypertarget{method-CFTime-set_bounds}{}}}
 \subsection{Method \code{set_bounds()}}{
-Set or delete the bounds of the \code{CFTime} instance.
+Set or delete the boundary values of the \code{CFTime} instance.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CFTime$set_bounds(value)}\if{html}{\out{</div>}}
 }
@@ -336,28 +343,30 @@ Set or delete the bounds of the \code{CFTime} instance.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{value}}{The bounds to set, in units of the offsets. A matrix \verb{(2, length(self$offsets))}. If \code{NULL}, the bounds are deleted. If \code{TRUE},
-make regular, consecutive bounds.}
+\item{\code{value}}{The boundary values to set, in units of the offsets. A
+matrix \verb{(2, length(self$offsets))}. If \code{NULL}, the boundaries are
+deleted. If \code{TRUE}, make regular, consecutive boundaries.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-\code{self} invisibly.
-This method returns \code{TRUE} if the time series has uniformly distributed
-time steps between the extreme values, \code{FALSE} otherwise. First test
-without sorting; this should work for most data sets. If not, only then
-offsets are sorted. For most data sets that will work but for implied
-resolutions of month, season, year, etc based on a "days" or finer
-calendar unit this will fail due to the fact that those coarser units
-have a variable number of days per time step, in all calendars except for
-\verb{360_day}. For now, an approximate solution is used that should work in
-all but the most non-conformal exotic arrangements.
+Self, invisibly.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-CFTime-equidistant"></a>}}
 \if{latex}{\out{\hypertarget{method-CFTime-equidistant}{}}}
 \subsection{Method \code{equidistant()}}{
+This method returns \code{TRUE} if the time series has uniformly
+distributed time steps between the extreme values, \code{FALSE} otherwise.
+First test without sorting; this should work for most data sets. If
+not, only then offsets are sorted. For most data sets that will work
+but for implied resolutions of month, season, year, etc based on a
+"days" or finer calendar unit this will fail due to the fact that those
+coarser units have a variable number of days per time step, in all
+calendars except for \verb{360_day}. For now, an approximate solution is
+used that should work in all but the most non-conformal exotic
+arrangements.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{CFTime$equidistant()}\if{html}{\out{</div>}}
 }
@@ -415,7 +424,7 @@ Can the time series be converted to POSIXt?
 }
 
 \subsection{Returns}{
-\code{TRUE} if the calendar support coversion to POSIXt, \code{FALSE}
+\code{TRUE} if the calendar support conversion to POSIXt, \code{FALSE}
 otherwise.
 }
 }

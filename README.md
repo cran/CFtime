@@ -114,6 +114,11 @@ Calendar-aware factors can be generated to support processing of data
 using `tapply()` and similar functions. Merging of multiple data sets
 and subsetting facilitate analysis while preserving computer resources.
 
+## Working with CFtime
+
+Check out the multiple articles that provide detailed instructions and
+examples for use of this package.
+
 ## Installation
 
 Get the latest stable version on CRAN:
@@ -128,124 +133,6 @@ You can install the development version of CFtime from
 ``` r
 # install.packages("devtools")
 devtools::install_github("R-CF/CFtime")
-```
-
-## Basic operation
-
-The package contains a class, `CFTime`, to describe the time coordinate
-reference system, including its calendar and origin, and which holds the
-time coordinate values that are offset from the origin to represent
-instants in time. This class operates on the data in the file of
-interest, here a Coordinated Regional Climate Downscaling Experiment
-(CORDEX) file of precipitation for the Central America domain.
-
-> In this vignette we are using the [`ncdfCF`
-> package](https://cran.r-project.org/package=ncdfCF) as that provides
-> the easiest interface to work with netCDF files. Package `CFtime` is
-> integrated into `ncdfCF` which makes working with time dimensions in
-> netCDF seamless.  
-> Packages `RNetCDF` and `ncdf4` can work with `CFtime` as well but then
-> the “intelligence” built into `ncdfCF` is not available, such as
-> automatically identifying axes and data orientation. Other packages
-> like `terra` and `stars` are not recommended because they do not
-> provide access to the specifics of the time dimension of the data and
-> do not properly consider any calendars other than “standard” and
-> “proleptic_gregorian”.
-
-``` r
-# install.packages("ncdfCF")
-library(ncdfCF)
-
-# Opening a data set that is included with the package.
-# Usually you would `list.files()` on a directory of your choice.
-fn <- list.files(path = system.file("extdata", package = "CFtime"), full.names = TRUE)[1]
-ds <- open_ncdf(fn)
-ds$attribute("title")
-#> [1] "NOAA GFDL GFDL-ESM4 model output prepared for CMIP6 update of RCP4.5 based on SSP2"
-ds$attribute("license")
-#> [1] "CMIP6 model data produced by NOAA-GFDL is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License (https://creativecommons.org/licenses/). Consult https://pcmdi.llnl.gov/CMIP6/TermsOfUse for terms of use governing CMIP6 output, including citation requirements and proper acknowledgment. Further information about this data, including some limitations, can be found via the further_info_url (recorded as a global attribute in this file). The data producers and data providers make no warranty, either express or implied, including, but not limited to, warranties of merchantability and fitness for a particular purpose. All liabilities arising from the supply of the information (including any liability arising in negligence) are excluded to the fullest extent permitted by law."
-
-# What axes are there in the data set?
-dimnames(ds)
-#> [1] "bnds" "lat"  "time" "lon"
-
-# Get the CFTime instance from the "time" axis
-(time <- ds[["time"]]$time())
-#> CF calendar:
-#>   Origin  : 1850-01-01T00:00:00
-#>   Units   : days
-#>   Type    : noleap
-#> Time series:
-#>   Elements: [2015-01-01T12:00:00 .. 2099-12-31T12:00:00] (average of 1.000000 days between 31025 elements)
-#>   Bounds  : set
-```
-
-Note that the `ncdfCF` package reads the netCDF file and interprets its
-contents on the basis of its attribute values. If an axis is found that
-represents time, then a `CFTime` instance is created for it, which can
-be accessed with the `time()` method.
-
-##### Using RNetCDF or ncdf4
-
-If you are using the `RNetCDF` or `ncdf4` package rather than `ncdfCF`,
-creating a `CFTime` instance goes like this, assuming that the axis is
-called “time”:
-
-``` r
-library(RNetCDF)
-nc <- open.nc(fn)
-time <- CFtime(att.get.nc(nc, "time", "units"), 
-               att.get.nc(nc, "time", "calendar"), 
-               var.get.nc(nc, "time"))
-
-library(ncdf4)
-nc <- nc_open(fn)
-names(nc$var) # A mix of data variables, axes, and other objects
-t <- CFtime(nc$dim$time$units, 
-            nc$dim$time$calendar, 
-            nc$dim$time$vals)
-```
-
-## Typical workflow
-
-In a typical process, you would combine multiple data files into a
-single data set to analyze a feature of interest. To continue the
-previous example of precipitation in the Central America domain using
-CORDEX data, you can calculate the precipitation per month for the
-period 2041 - 2050 as follows:
-
-``` r
-# NOT RUN
-library(ncdfCF)
-library(abind)
-
-# Open the files - one would typically do this in a loop
-ds2041 <- open_ncdf("~/pr_CAM-22_MOHC-HadGEM2-ES_rcp26_r1i1p1_GERICS-REMO2015_v1_day_20410101-20451230.nc")
-ds2046 <- open_ncdf("~/pr_CAM-22_MOHC-HadGEM2-ES_rcp26_r1i1p1_GERICS-REMO2015_v1_day_20460101-20501230.nc")
-
-# Create the time object from the first file
-# All files have an identical "time" axis as per the CORDEX specifications
-time <- ds2041[["time"]]$time()
-
-# Add the time values from the remaining files
-time <- time + ds2046[["pr"]]$time()$offsets
-
-# Grab the data from the files and merge the arrays into one, in the same order
-# as the time values
-pr <- abind(ds2041[["pr"]]$data()$array(), ds2046[["pr"]]$data()$array())
-
-# Create the month factor from the time object
-f_month <- CFfactor(time, "month")
-
-# The result from applying this factor to a data set that it describes is a new
-# data set with a different "time" dimension. The function result stores this
-# new time object as an attribute.
-pr_month_time <- attr(f_month, "CFTime")
-
-# Now sum the daily data to monthly data
-# Dimensions 1 and 2 are longitude and latitude, the third dimension is time
-pr_month <- aperm(apply(pr, 1:2, tapply, f_month, sum), c(2, 3, 1))
-dimnames(pr_month)[[3]] <- as_timestamp(pr_month_time)
 ```
 
 ## Coverage

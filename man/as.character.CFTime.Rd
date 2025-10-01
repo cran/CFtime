@@ -2,7 +2,7 @@
 % Please edit documentation in R/api.R
 \name{as.character.CFTime}
 \alias{as.character.CFTime}
-\title{Return the timestamps contained in the \code{CFTime} instance.}
+\title{Return the timestamps contained in the \code{CFTime} instance}
 \usage{
 \method{as.character}{CFTime}(x, ...)
 }
@@ -15,7 +15,7 @@
 The timestamps in the specified \code{CFTime} instance.
 }
 \description{
-Return the timestamps contained in the \code{CFTime} instance.
+Return the timestamps contained in the \code{CFTime} instance
 }
 \examples{
 t <- CFtime("days since 1850-01-01", "julian", 0:364)

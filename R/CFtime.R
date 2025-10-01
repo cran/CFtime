@@ -93,7 +93,7 @@ CFTime <- R6::R6Class("CFTime",
 
     #' @description Print a summary of the `CFTime` object to the console.
     #' @param ... Ignored.
-    #' @return `self` invisibly.
+    #' @return Self, invisibly.
     print = function(...) {
       noff <- length(self$offsets)
       if (noff == 0L) {
@@ -124,12 +124,10 @@ CFTime <- R6::R6Class("CFTime",
 
     #' @description This method returns the first and last timestamp of the time
     #'   series as a vector. Note that the offsets do not have to be sorted.
-    #'
     #' @param format Value of "date" or "timestamp". Optionally, a
     #'   character string that specifies an alternate format.
     #' @param bounds Logical to indicate if the extremes from the bounds should
     #'   be used, if set. Defaults to `FALSE`.
-    #'
     #' @return Vector of two character strings that represent the starting and
     #'   ending timestamps in the time series. If a `format` is supplied, that
     #'   format will be used. Otherwise, if all of the timestamps in the time
@@ -167,14 +165,12 @@ CFTime <- R6::R6Class("CFTime",
     #'   if all timestamps fall on or after 1582-10-15. If `asPOSIX = TRUE` is
     #'   specified while the calendar does not support it, an error will be
     #'   generated.
-    #'
     #' @param format character. A character string with either of the values
     #'   "date" or "timestamp". If the argument is not specified, the format
     #'   used is "timestamp" if there is time information, "date" otherwise.
     #' @param asPOSIX logical. If `TRUE`, for "standard", "gregorian" and
     #'   "proleptic_gregorian" calendars the output is a vector of `POSIXct` -
     #'   for other calendars an error will be thrown. Default value is `FALSE`.
-    #'
     #' @return A character vector where each element represents a moment in
     #'   time according to the `format` specifier.
     as_timestamp = function(format = NULL, asPOSIX = FALSE) {
@@ -190,8 +186,8 @@ CFTime <- R6::R6Class("CFTime",
         stop("Format specifier not recognized", call. = FALSE) # nocov
 
       if (asPOSIX) {
-        if (format == "date") ISOdate(time$year, time$month, time$day, 0L)
-        else ISOdatetime(time$year, time$month, time$day, time$hour, time$minute, time$second, "UTC")
+        if (format == "date") ISOdate(time$year, time$month, time$day, 0L, tz = "UTC")
+        else ISOdatetime(time$year, time$month, time$day, time$hour, time$minute, time$second, tz = "UTC")
       } else .format_format(time, self$cal$timezone, format)
     },
 
@@ -218,36 +214,42 @@ CFTime <- R6::R6Class("CFTime",
     #'   method to generate `POSIXct` timestamps (observed data generally uses a
     #'   "standard" calendar) and then use the [base::format()] function which
     #'   supports the full set of specifiers.
-    #'
     #' @param format A character string with `strptime` format specifiers. If
     #'   omitted, the most economical format will be used: a full timestamp when
     #'   time information is available, a date otherwise.
-    #'
+    #' @param usetz Logical. Should the time zone offset be appended to the
+    #'   output? This is always in numerical form, i.e. "-0800", from UTC.
+    #'   Default is `FALSE`.
     #' @return A vector of character strings with a properly formatted
     #'   timestamp. Any format specifiers not recognized or supported will be
     #'   returned verbatim.
-    format = function(format) {
+    format = function(format, usetz = FALSE) {
       if (length(self$offsets) == 0L) return(character(0L))
       if (missing(format)) format <- ""
       else if (!is.character(format) || length(format) != 1L)
         stop("`format` argument must be a character string with formatting specifiers", call. = FALSE)
 
       ts <- self$cal$offsets2time(self$offsets)
-      .format_format(ts, self$cal$timezone, format)
+      if ((usetz || grepl("%z$", format)) && .has_time(ts)) {
+        tz <- self$cal$timezone
+        if (!grepl("%z$", format))
+          format <- paste0(format, "%z")
+      } else tz <- ""
+      .format_format(ts, tz, format)
     },
 
     #' @description Find the index in the time series for each timestamp given
-    #'   in argument `x`. Alternatively, when `x` is a numeric vector of
-    #'   index values, return the valid indices of the same vector, with the
-    #'   side effect being the attribute "CFTime" associated with the result.
+    #'   in argument `x`. Alternatively, when `x` is a numeric vector of index
+    #'   values, return the valid indices of the same vector, with the side
+    #'   effect being the attribute "CFTime" associated with the result.
     #'
     #'   Matching also returns index values for timestamps that fall between two
     #'   elements of the time series - this can lead to surprising results when
     #'   time series elements are positioned in the middle of an interval (as
     #'   the CF Metadata Conventions instruct us to "reasonably assume"): a time
     #'   series of days in January would be encoded in a netCDF file as
-    #'   `c("2024-01-01 12:00:00", "2024-01-02 12:00:00", "2024-01-03 12:00:00", ...)`
-    #'   so `x <- c("2024-01-01", "2024-01-02", "2024-01-03")` would
+    #'   `c("2024-01-01 12:00:00", "2024-01-02 12:00:00", "2024-01-03 12:00:00",
+    #'   ...)` so `x <- c("2024-01-01", "2024-01-02", "2024-01-03")` would
     #'   result in `(NA, 1, 2)` (or `(NA, 1.5, 2.5)` with `method = "linear"`)
     #'   because the date values in `x` are at midnight. This situation is
     #'   easily avoided by ensuring that this `CFTime` instance has bounds set
@@ -261,15 +263,16 @@ CFTime <- R6::R6Class("CFTime",
     #'   Values of `x` that are not valid timestamps according to the calendar
     #'   of this `CFTime` instance will be returned as `NA`.
     #'
-    #'   Argument `x` can also be a numeric vector of index values, in which case the
-    #'   valid values in `x` are returned. If negative values are passed, the
-    #'   positive counterparts will be excluded and then the remainder returned.
-    #'   Positive and negative values may not be mixed. Using a numeric vector
-    #'   has the side effect that the result has the attribute "CFTime"
-    #'   describing the temporal dimension of the slice. If index values outside
-    #'   of the range of `self` are provided, an error will be thrown.
-    #' @param x Vector of character, POSIXt or Date values to find indices for,
-    #'   or a numeric vector.
+    #'   Argument `x` can also be a numeric vector of index values, in which
+    #'   case the valid values in `x` are returned. If negative values are
+    #'   passed, the positive counterparts will be excluded and then the
+    #'   remainder returned. Positive and negative values may not be mixed.
+    #'   Using a numeric vector has the side effect that the result has the
+    #'   attribute "CFTime" describing the temporal dimension of the slice. If
+    #'   index values outside of the range of `self` are provided, an error will
+    #'   be thrown.
+    #' @param x Vector of `character`, `POSIXt` or `Date` values to find indices
+    #'   for, or a `numeric` vector.
     #' @param method Single value of "constant" or "linear". If `"constant"`,
     #'   return the index value for each match. If `"linear"`, return the index
     #'   value with any fractional value.
@@ -324,11 +327,10 @@ CFTime <- R6::R6Class("CFTime",
       intv
     },
 
-    #' @description Return bounds.
-    #'
+    #' @description Return boundary values.
     #' @param format A string specifying a format for output, optional.
-    #' @return An array with dims(2, length(offsets)) with values for the
-    #'   bounds. `NULL` if the bounds have not been set.
+    #' @return An array with `dims(2, length(offsets))` with values for the
+    #'   boundaries. `NULL` if the boundaries have not been set.
     get_bounds = function(format) {
       bnds <- private$.bounds
       if (is.null(bnds) || missing(format)) return(bnds)
@@ -339,12 +341,11 @@ CFTime <- R6::R6Class("CFTime",
       b
     },
 
-    #' @description Set or delete the bounds of the `CFTime` instance.
-    #'
-    #' @param value The bounds to set, in units of the offsets. A matrix `(2,
-    #'   length(self$offsets))`. If `NULL`, the bounds are deleted. If `TRUE`,
-    #'   make regular, consecutive bounds.
-    #' @return `self` invisibly.
+    #' @description Set or delete the boundary values of the `CFTime` instance.
+    #' @param value The boundary values to set, in units of the offsets. A
+    #'   matrix `(2, length(self$offsets))`. If `NULL`, the boundaries are
+    #'   deleted. If `TRUE`, make regular, consecutive boundaries.
+    #' @return Self, invisibly.
     set_bounds = function(value) {
       if (is.null(value) || isFALSE(value)) private$.bounds <- NULL
       else if (isTRUE(value)) {
@@ -373,18 +374,18 @@ CFTime <- R6::R6Class("CFTime",
       invisible(self)
     },
 
-    #' This method returns `TRUE` if the time series has uniformly distributed
-    #' time steps between the extreme values, `FALSE` otherwise. First test
-    #' without sorting; this should work for most data sets. If not, only then
-    #' offsets are sorted. For most data sets that will work but for implied
-    #' resolutions of month, season, year, etc based on a "days" or finer
-    #' calendar unit this will fail due to the fact that those coarser units
-    #' have a variable number of days per time step, in all calendars except for
-    #' `360_day`. For now, an approximate solution is used that should work in
-    #' all but the most non-conformal exotic arrangements.
-    #'
+    #' @description This method returns `TRUE` if the time series has uniformly
+    #'   distributed time steps between the extreme values, `FALSE` otherwise.
+    #'   First test without sorting; this should work for most data sets. If
+    #'   not, only then offsets are sorted. For most data sets that will work
+    #'   but for implied resolutions of month, season, year, etc based on a
+    #'   "days" or finer calendar unit this will fail due to the fact that those
+    #'   coarser units have a variable number of days per time step, in all
+    #'   calendars except for `360_day`. For now, an approximate solution is
+    #'   used that should work in all but the most non-conformal exotic
+    #'   arrangements.
     #' @return `TRUE` if all time steps are equidistant, `FALSE` otherwise, or
-    #' `NA` if no offsets have been set.
+    #'   `NA` if no offsets have been set.
     equidistant = function() {
       if (length(self$offsets) == 0L) return(NA)
       out <- all(diff(self$offsets) == self$resolution)
@@ -416,7 +417,6 @@ CFTime <- R6::R6Class("CFTime",
     #'   vector of a length equal to the number of time steps in the time series
     #'   with values `TRUE` for those time steps that fall between the two
     #'   extreme values of the vector values, `FALSE` otherwise.
-    #'
     #' @param extremes Character vector of timestamps that represent the
     #'   time period of interest. The extreme values are selected. Badly
     #'   formatted timestamps are silently dropped.
@@ -459,7 +459,7 @@ CFTime <- R6::R6Class("CFTime",
     },
 
     #' @description Can the time series be converted to POSIXt?
-    #' @return `TRUE` if the calendar support coversion to POSIXt, `FALSE`
+    #' @return `TRUE` if the calendar support conversion to POSIXt, `FALSE`
     #' otherwise.
     POSIX_compatible = function() {
       self$cal$POSIX_compatible(self$offsets)
@@ -483,12 +483,10 @@ CFTime <- R6::R6Class("CFTime",
     #'   different and no preceding integer is allowed, `labels` are always
     #'   assigned using values of `breaks`, and the interval is always
     #'   left-closed.
-    #'
     #' @param breaks A character string of a factor period (see [CFfactor()] for
     #'   a description), or a character vector of timestamps that conform to the
     #'   calendar of `x`, with a length of at least 2. Timestamps must be given
     #'   in ISO8601 format, e.g. "2024-04-10 21:31:43".
-    #'
     #' @return A factor with levels according to the `breaks` argument, with
     #'   attributes 'period', 'era' and 'CFTime'. When `breaks` is a factor
     #'   period, attribute 'period' has that value, otherwise it is '"day"'.
@@ -590,7 +588,6 @@ CFTime <- R6::R6Class("CFTime",
     #'   describes the temporal dimension of the result of, say, `B <- apply(A,
     #'   1:2, tapply, Af, FUN)`. The 'CFTime' attribute contains a
     #'   [CFClimatology] instance for era factors.
-    #'
     #' @param period character. A character string with one of the values
     #'   "year", "season", "quarter", "month" (the default), "dekad" or "day".
     #' @param era numeric or list, optional. Vector of years for which to
@@ -847,7 +844,6 @@ CFTime <- R6::R6Class("CFTime",
     #'   factor level may be different. Use [CFfactor_coverage()] to determine
     #'   the actual number of data points or the coverage of data points
     #'   relative to the factor level.
-    #'
     #' @param f A factor or a list of factors derived from the method
     #'   `CFTime$factor()`.
     #' @return If `f` is a factor, a numeric vector with a length equal to the
@@ -867,7 +863,6 @@ CFTime <- R6::R6Class("CFTime",
 
     #' @description Calculate the number of time elements, or the relative
     #' coverage, in each level of a factor generated by `CFTime$factor()`.
-    #'
     #' @param f A factor or a list of factors derived from the method
     #'   `CFTime$factor()`.
     #' @param coverage "absolute" or "relative".
@@ -940,6 +935,13 @@ CFTime <- R6::R6Class("CFTime",
     unit = function(value) {
       if (missing(value))
         CFt$units$name[self$cal$unit]
+    },
+
+    #' @field length (read-only) Retrieve the number of offsets in the time
+    #'   series.
+    length = function(value) {
+      if (missing(value))
+        length(self$offsets)
     },
 
     #' @field bounds Retrieve or set the bounds for the offsets. On setting, a
