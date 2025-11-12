@@ -1,6 +1,6 @@
 Package: CFtime
 Title: Using CF-Compliant Calendars with Climate Projection Data
-Version: 1.7.1
+Version: 1.7.2
 Authors@R: 
     person("Patrick", "Van Laake", , "patrick@vanlaake.net", role = c("aut", "cre", "cph"))
 Description: Support for all calendars as specified in the Climate and Forecast 
@@ -17,19 +17,18 @@ Encoding: UTF-8
 RoxygenNote: 7.3.3
 Imports: R6
 Suggests: rmarkdown, testthat (>= 3.0.0), stringr
-URL: https://github.com/R-CF/CFtime
+URL: https://r-cf.github.io/CFtime/, https://github.com/R-CF/CFtime
 BugReports: https://github.com/R-CF/CFtime/issues
 Config/testthat/edition: 3
 Collate: 'api.R' 'CFCalendar.R' 'CFCalendar360.R' 'CFCalendar365.R'
         'CFCalendar366.R' 'CFCalendarJulian.R' 'CFCalendarNone.R'
         'CFCalendarProleptic.R' 'CFCalendarStandard.R'
         'CFCalendarTAI.R' 'CFCalendarUTC.R' 'CFClimatology.R'
-        'CFtime-package.R' 'CFtime.R' 'deprecated.R' 'helpers.R'
-        'zzz.R'
+        'CFtime-package.R' 'CFtime.R' 'helpers.R' 'zzz.R'
 Config/Needs/website: rmarkdown
 NeedsCompilation: no
-Packaged: 2025-09-25 18:32:15 UTC; patrickvanlaake
+Packaged: 2025-11-12 13:22:45 UTC; patrickvanlaake
 Author: Patrick Van Laake [aut, cre, cph]
 Maintainer: Patrick Van Laake <patrick@vanlaake.net>
 Repository: CRAN
-Date/Publication: 2025-10-01 08:00:02 UTC
+Date/Publication: 2025-11-12 15:40:12 UTC

@@ -109,7 +109,8 @@ CFTime <- R6::R6Class("CFTime",
         } else {
           el <- if (noff > 1L) {
             sprintf("  Elements: [%s .. %s] (average of %f %s between %d elements)\n",
-                   d[1L], d[2L], self$resolution, CFt$units$name[self$cal$unit], noff)
+                   d[1L], d[2L], self$resolution,
+                   paste0(if (self$cal$prefix_id) CFt$prefixes$name[self$cal$prefix_id], CFt$units$name[self$cal$unit]), noff)
           } else
             paste("  Element :", d[1L], "\n")
         }
@@ -117,8 +118,8 @@ CFTime <- R6::R6Class("CFTime",
         b <- if (is.null(private$.bounds)) "  Bounds  : not set\n"
              else "  Bounds  : set\n"
       }
-      cal <- capture.output(self$cal$print())
-      cat(paste(cal, collapse = "\n"), "\nTime series:\n",  el, b, sep = "")
+      self$cal$print()
+      cat("\nTime series:\n",  el, b, sep = "")
       invisible(self)
     },
 
@@ -279,8 +280,8 @@ CFTime <- R6::R6Class("CFTime",
     #' @param rightmost.closed Whether or not to include the upper limit of
     #'   argument `x`. Default is `FALSE`. This argument is ignored when
     #'   argument `x` contains index values.
-    #' @return A numeric vector giving indices into `self` for the values of
-    #'   `x`. If there is at least 1 valid index, then attribute "CFTime"
+    #' @return A numeric vector giving indices into `self` for the valid values
+    #'   of `x`. If there is at least 1 valid index, then attribute "CFTime"
     #'   contains an instance of `CFTime` that describes the dimension of
     #'   filtering the dataset associated with `self` with the result of this
     #'   method, excluding any `NA` values.
@@ -358,18 +359,19 @@ CFTime <- R6::R6Class("CFTime",
         off <- self$offsets
         len <- length(off)
 
+        warn <- NULL
         if (len == 0L)
-          stop("Cannot set bounds when there are no offsets", call. = FALSE)
-
-        if (is.matrix(value) && is.numeric(value)) {
+          warn <- "Cannot set boundary values when there are no offsets"
+        else if (is.matrix(value) && is.numeric(value)) {
           if (!all(dim(value) == c(2L, len)))
-            stop("Replacement value has incorrect dimensions", call. = FALSE)
-        } else stop("Replacement value must be a numeric matrix or a single logical value", call. = FALSE)
+            warn <- "Replacement boundary values array has incorrect dimensions"
+        } else warn <- "Replacement boundary values must be a numeric matrix or a single logical value"
+        if (is.null(warn) && !(all(value[2L,] >= off) && all(off >= value[1L,])))
+          warn <- "Values of the replacement boundary values must surround the offset values"
 
-        if (!(all(value[2L,] >= off) && all(off >= value[1L,])))
-          stop("Values of the replacement value must surround the offset values", call. = FALSE)
-
-        private$.bounds <- value
+        if (is.null(warn))
+          private$.bounds <- value
+        else warning(warn, call. = FALSE)
       }
       invisible(self)
     },
@@ -977,3 +979,21 @@ str.CFTime <- function(object, ...) {
       "] having ", length(object$offsets), " offset values", sep = "")
 }
 
+#' Subset a `CFTime` instance by position in the time series
+#'
+#' @param x A `CFTime` instance.
+#' @param i A vector a positive integer values to indicate which values to
+#'   extract from the time series by position. If negative values are passed,
+#'   their positive counterparts will be excluded and then the remainder
+#'   returned. Positive and negative values may not be mixed.
+#' @param ... Ignored.
+#' @return A numeric vector with those values of `i` (or the inverse, when
+#'   negative) that are valid in `x`. If there is at least 1 valid result, then
+#'   attribute "CFTime" of the returned value contains an instance of `CFTime`
+#'   that describes the dimension of filtering the dataset associated with `x`
+#'   with the result of this function, excluding any `NA` values.
+#' @export
+#' @references https://github.com/R-CF/CFtime/issues/20
+"[.CFTime" = function(x, i = TRUE, ...) {
+  x$indexOf(i)
+}
